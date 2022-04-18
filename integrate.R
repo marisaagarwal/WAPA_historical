@@ -7,8 +7,8 @@
 ##  Approach:      1. Obtain historic data from surveys done within WAPA.
 ##                 2. Analyze data to fulfill research objective with focus on:
 ##                      - diversity
-##                      - community structure & variation (NMDS?)
-##                 3. If possible, compare to modern surveys
+##                      - community structure & variation (NMDS)
+##                 3. Compare to field surveys done in 2022
 ##
 ##  Authors:       Marisa Agarwal
 ##
