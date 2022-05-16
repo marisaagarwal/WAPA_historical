@@ -45,6 +45,7 @@
     library(readr)
     library(readxl)
     library(data.table)
+    library(writexl)
     
     # for easier tidy stats 
     library(rstatix)

@@ -115,12 +115,12 @@
 
 ## 4. which species are most responsible for differences?
     
-    # example from internet, would need to change things around
-    permanova = #the permanova function
-    coef <- coefficients(permanova)["group1",]
-    top.coef <- coef[rev(order(abs(coef)))[1:20]]
-    par(mar = c(3, 14, 2, 1))
-    barplot(sort(top.coef), horiz = T, las = 1, main = "Top taxa")
+    # # example from internet, would need to change things around
+    # permanova = #the permanova function
+    # coef <- coefficients(permanova)["group1",]
+    # top.coef <- coef[rev(order(abs(coef)))[1:20]]
+    # par(mar = c(3, 14, 2, 1))
+    # barplot(sort(top.coef), horiz = T, las = 1, main = "Top taxa")
     
     
     
