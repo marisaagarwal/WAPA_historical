@@ -65,6 +65,6 @@
                     as.data.frame()
         
         # merging transect names and percent cover values
-        percent_cover_output = merge(transect_ID, percent_cover_output)        
+        percent_cover_output = merge(transect_ID, percent_cover_output)
     
     
