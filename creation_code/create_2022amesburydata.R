@@ -59,10 +59,6 @@
             filter(!is.na(species)) %>%
             pivot_wider(names_from = species, values_from = count, values_fill = 0)
     
-    current_data_vegan = 
-        merge(surveysummary_2022 %>%
-                  dplyr::select(c(site, transect, qualitative_transect_position, substrate_type)),
-              current_data_vegan)
     
     
   

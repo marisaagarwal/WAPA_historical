@@ -105,11 +105,34 @@
         
     
 ## 6. Percent Cover Analysis
-
+    
+    # differences in percent coral cover by site
+    surveysummary_2022 %>%
+        t_test(percent_cover ~ site)
+        
+    # differences in percent coral cover by location of transect on reef
+    surveysummary_2022 %>%
+        t_test(percent_cover ~ qualitative_transect_position)
+        
+    # differences in percent cover by transect's location on reef for each site
+        #Asan
+        surveysummary_2022 %>%
+            filter(site == "Asan") %>%
+            t_test(percent_cover ~ qualitative_transect_position)
+        #Agat
+        surveysummary_2022 %>%
+            filter(site == "Agat") %>%
+            t_test(percent_cover ~ qualitative_transect_position)
     
         
         
 ## 7. Community Composition Analysis: NMDS approach
+        
+    # set up data        
+    current_data_vegan = 
+        merge(surveysummary_2022 %>%
+                dplyr::select(c(site, transect, qualitative_transect_position, substrate_type)),
+            current_data_vegan)
         
     # conduct NMDS 
     currentcoral_NMDS = metaMDS(current_data_vegan[,5:ncol(current_data_vegan)], 
@@ -191,6 +214,43 @@
     
         
         
-## 8. Coral size (area) vs distance from shore/crest/water  
+## 8. Environmental Factors (distance from shore/crest/freshwater)
+    
+    # diversity and distance to shore, % cover and distance to shore
+    summary(lm(sp_richness ~ dist_to_shore_m, data = surveysummary_2022))
+    summary(lm(percent_cover ~ dist_to_shore_m, data = surveysummary_2022))
+    
+    # diversity and distance to reef crest, % cover and distance to reef crest
+    summary(lm(sp_richness ~ dist_to_crest_m, data = surveysummary_2022))
+    summary(lm(percent_cover ~ dist_to_crest_m, data = surveysummary_2022))
+
+    #diversity and distance to freshwater, % cover and distance to freshwater
+    summary(lm(sp_richness ~ dist_to_freshwater_m, data = surveysummary_2022))
+    summary(lm(percent_cover ~ dist_to_freshwater_m, data = surveysummary_2022))
+    
+    
+## 9. Coral Size Analysis
+    
+    # differences in coral size by species, transect's location on reef, & site
+    
+        # currently failing bc not enough data for each species
+        full_join(x = all_data %>%
+                      mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
+                  y = surveysummary_2022) %>%
+            dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
+            filter(site == "Asan") %>%
+            group_by(species) %>%
+            t_test(area_cm2 ~ qualitative_transect_position) 
+     
+    summary_species_sizes = 
+        full_join(x = all_data %>%
+                      mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
+                  y = surveysummary_2022) %>%
+        dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
+        group_by(site, qualitative_transect_position, species) %>%
+        summarise(mean_coral_area = mean(area_cm2),
+                  std_error_coral_area = std.error(area_cm2))
+    
+
     
     

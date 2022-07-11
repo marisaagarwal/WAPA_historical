@@ -10,7 +10,7 @@
     source(paste0(data_locale, "analyze_2022amesburydata.R"))
     
     
-## 2. Plot diversity 
+## 2. Plot diversity
     
     surveysummary_2022 %>%
         group_by(site, qualitative_transect_position) %>%
@@ -72,7 +72,7 @@
         geom_smooth(aes(x = dist_to_crest_m, y = percent_cover), color = "blue", method = "lm") +
         geom_point(aes(x = dist_to_freshwater_m, y = percent_cover),color = "green") +
         geom_smooth(aes(x = dist_to_freshwater_m, y = percent_cover), color = "green", method = "lm") +
-        labs(x = "Distance to Shore (red) / Crest (blue) / Freshwater (green)")+
+        labs(x = "Distance to Shore (red) / Crest (blue) / Freshwater (green)") +
         theme_light()
 
     surveysummary_2022 %>%
@@ -85,8 +85,7 @@
     
     # NMDS plot of coral communities at each site
     plotting_current_NMDS %>%
-        ggplot(aes(x = NMDS1, y = NMDS2, color = site, 
-                   # shape = "Position on reef"
+        ggplot(aes(x = NMDS1, y = NMDS2, color = site
                    )) +
         geom_point(size = 3, alpha = 0.4) +
         geom_text(label = plotting_current_NMDS$transect) +
@@ -103,7 +102,7 @@
     
     # NMDS plot of coral communities at different sites & locations on reef flat
     plotting_current_NMDS %>%
-        ggplot(aes(x = NMDS1, y = NMDS2, color = site, shape = qualitative_transect_position)) +
+        ggplot(aes(x = NMDS1, y = NMDS2, color = qualitative_transect_position, shape = site)) +
         geom_point(size = 3, alpha = 0.4) +
         # geom_text(label = plotting_current_NMDS$transect) +
         stat_ellipse(linetype = 2, size = 1) +
@@ -113,8 +112,8 @@
     ggplot() +
         geom_point(data = plotting_current_NMDS,
                    aes(x = NMDS1, y = NMDS2, 
-                       color = site, 
-                       shape = qualitative_transect_position),
+                       color = qualitative_transect_position, 
+                       shape = site),
                    size = 3, 
                    alpha = 0.8) +
         stat_ellipse(data = plotting_current_NMDS, 
@@ -135,7 +134,7 @@
         theme_light()
     
     
-## 6. Plot site characteristics
+## 6. Plot site characteristics (i.e., substrate type)
     
     surveysummary_2022 %>%
         ggplot(aes(x = substrate_type)) +
@@ -150,5 +149,65 @@
     surveysummary_2022 %>%
         ggplot(aes(x = substrate_type)) +
             geom_bar(aes(fill = qualitative_transect_position), position = "dodge")
+    
+
+## 7. Plot community composition barchart
+    
+    amesbury_data %>%
+        ggplot(aes(x = as.character(Transect), y = Value, fill = `Species Listed (2022 taxonomy)`)) +
+        geom_bar(position = "fill", stat = "identity") +
+        facet_wrap(~qualitative_transect_position) +
+        theme_light()
+            
+  current_community_long = 
+      current_data_vegan %>%
+          dplyr::select(-c(substrate_type))
+  
+  current_community_long =
+    current_community_long %>%
+      pivot_longer(cols = c(4:ncol(current_community_long)), 
+                   names_to = "Species", values_to = "Value")
+  
+  current_community_long %>%
+      ggplot(aes(x = as.character(transect), y = Value, fill = Species)) +
+      geom_bar(position = "fill", stat = "identity") +
+      facet_grid(site~qualitative_transect_position) +
+      theme_light()
+  
+  current_community_long %>%
+      ggplot(aes(x = qualitative_transect_position, y = Value, fill = Species)) +
+      geom_bar(position = "fill", stat = "identity") +
+      facet_wrap(~site) +
+      theme_light()
+  
+  current_community_long %>%
+      ggplot(aes(x = site, y = Value, fill = Species)) +
+      geom_bar(position = "fill", stat = "identity") +
+      theme_light()
+  
+  
+## 8. Plot coral sizes
+    
+  full_join(x = all_data %>%
+                mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
+            y = surveysummary_2022) %>%
+      dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
+    ggplot(aes(x = species, y = area_cm2, fill = qualitative_transect_position)) +
+        geom_boxplot() +
+        facet_wrap(~site)
+  
+  summary_species_sizes %>%
+      filter(site == "Agat") %>%
+      ggplot(aes(x = species, y = mean_coral_area, fill = qualitative_transect_position)) +
+        geom_col(position = "dodge") +
+        geom_errorbar(aes(ymin = mean_coral_area - std_error_coral_area,
+                          ymax = mean_coral_area + std_error_coral_area),
+                      position = position_dodge(0.9), width = 0.2) +
+        # facet_wrap(~site, ncol = 1)
+      
+
+            
+            
+            
     
     

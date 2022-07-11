@@ -28,23 +28,30 @@
 
 ## 2. Groom data
     
-    # fill NAs in Value column with zeros
+    # only include reef flat sites
     amesbury_data %<>%
-        mutate(Value = replace_na(Value, 0))
+        filter(!Transect == c(19, 24)) %>%    # remove Agat-19 & Agat-24 because no corals along either transect
+        filter(`Position on Reef` == "reef flat") %>%
+        dplyr::select(-c(Source, Metric, `Species Listed (from paper)`,`Position on Reef`))
+    
+    # remove species that didn't show up in transects
+    amesbury_data %<>%
+        drop_na(Value)
     
     # put into a 'vegan'-friendly format
     amesbury_data_vegan = 
         amesbury_data %>%
-            dplyr::select(-c(Source, Metric, `Species Listed (from paper)`)) %>%
-                pivot_wider(names_from = `Species Listed (2022 taxonomy)`,
-                            values_from = Value, 
-                            values_fn = sum, 
-                            values_fill = 0)
+            pivot_wider(names_from = `Species Listed (2022 taxonomy)`,
+                        values_from = Value, 
+                        values_fn = sum, 
+                        values_fill = 0)
     
-    amesbury_data_vegan_NMDS = 
-        amesbury_data_vegan %>%
-            filter(!Transect == c(19, 24))     # remove Agat-19 & Agat-24 because no corals along either transect
 
+    amesbury_data_vegan_NMDS = 
+        amesbury_data_vegan
+        
+            
+            
     
 
     

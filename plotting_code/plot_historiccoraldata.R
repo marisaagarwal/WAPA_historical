@@ -14,7 +14,7 @@
 
     # NMDS plot of coral communities at each site
     plotting_historic_NMDS %>%
-        ggplot(aes(x = NMDS1, y = NMDS2, color = Site, shape = `Position on Reef`)) +
+        ggplot(aes(x = NMDS1, y = NMDS2, color = Site, shape = qualitative_transect_position)) +
             geom_point(size = 3, alpha = 0.4) +
             geom_text(label = plotting_historic_NMDS$Transect) +
             # ggrepel::geom_text_repel(label = plotting_historic_NMDS$Transect) +
@@ -30,7 +30,7 @@
             theme_light()
     
     plotting_historic_NMDS %>%
-        ggplot(aes(x = NMDS1, y = NMDS2, color = `Position on Reef`, shape = `Position on Reef`)) +
+        ggplot(aes(x = NMDS1, y = NMDS2, color = qualitative_transect_position, shape = qualitative_transect_position)) +
             geom_point(size = 3, alpha = 0.4) +
             # geom_text(label = plotting_historic_NMDS$Transect) +
             # ggrepel::geom_text_repel(label = plotting_historic_NMDS$Transect) +
@@ -42,7 +42,7 @@
             geom_point(data = plotting_historic_NMDS,
                        aes(x = NMDS1, y = NMDS2, 
                            color = Site, 
-                           shape = `Position on Reef`),
+                           shape = qualitative_transect_position),
                        size = 3, 
                        alpha = 0.8) +
             geom_segment(data = significant_historic_species_scores,
@@ -56,6 +56,29 @@
                                      direction = "both", 
                                      segment.size = 0.25) +                          # add labels for species
             theme_light()
+    
+    
+## 3. Plot species composition
+        
+    amesbury_data %>%
+        ggplot(aes(x = as.character(Transect), y = Value, fill = `Species Listed (2022 taxonomy)`)) +
+            geom_bar(position = "fill", stat = "identity") +
+            facet_grid(Site~qualitative_transect_position) +
+            theme_light()
+    
+    amesbury_data %>%
+        ggplot(aes(x = Site, y = Value, fill = `Species Listed (2022 taxonomy)`)) +
+            geom_bar(position = "fill", stat = "identity") +
+            theme_light()
+    
+    amesbury_data %>%
+        ggplot(aes(x = qualitative_transect_position, y = Value, fill = `Species Listed (2022 taxonomy)`)) +
+        geom_bar(position = "fill", stat = "identity") +
+        facet_wrap(~Site) +
+        theme_light()
+    
+    
+    
     
     
     

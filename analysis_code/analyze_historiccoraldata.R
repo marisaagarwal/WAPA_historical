@@ -10,10 +10,10 @@
     source(paste0(data_locale, "create_historiccoraldata.R"))
     
     
-## 2. NMDS
+## 2. NMDS (reef flat data only) 
     
     # conduct NMDS 
-    historiccoral_NMDS = metaMDS(amesbury_data_vegan_NMDS[,4:58], 
+    historiccoral_NMDS = metaMDS(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)], 
                                  k = 2,
                                  distance = "bray", 
                                  trymax = 100)
@@ -25,7 +25,7 @@
     # create parsed down grouping dataframe and add row_ID column
     reference_amesbury = 
         amesbury_data_vegan_NMDS %>%
-        dplyr::select(c(Site, Transect, `Position on Reef`)) %>%
+        dplyr::select(c(Site, Transect, qualitative_transect_position)) %>%
         mutate(row_ID = row_number())
     
     # extract data for plotting
@@ -45,7 +45,7 @@
     
     historiccoral_speciesfit =
         envfit(historiccoral_NMDS, 
-               amesbury_data_vegan_NMDS[,4:58], 
+               amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)], 
                permutations = 999) # this fits species vectors
     
     
@@ -72,56 +72,174 @@
 
 ## 3. PERMANOVA (test for stat sig differences between groups)
 
-    # difference in community based on transect's position on reef? 
+    # difference in community based on transect's position on reef or site? 
     
-        # assumption: do groups have homogenous variances? 
-        dis = vegdist(amesbury_data_vegan_NMDS[,4:58],method="bray")
-        mod = betadisper(dis, reference_amesbury$`Position on Reef`)
+        # transect position assumption: do groups have homogeneous variances? 
+        dis = vegdist(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)],method="bray")
+        mod = betadisper(dis, reference_amesbury$qualitative_transect_position)
         anova(mod)      # p>0.05, proceed
             # plot(mod)
-
-    adonis2(amesbury_data_vegan_NMDS[,4:58] ~ `Position on Reef`, 
-            data = reference_amesbury, 
-            permutations = 999,
-            method = "bray")                        # yes, p<0.05
-    
-    
-    # difference in community based on site?
-    
-        # assumption: do groups have homogenous variances? 
-        dis = vegdist(amesbury_data_vegan_NMDS[,4:58],method="bray")
+        
+        # site assumption: do groups have homogeneous variances? 
+        dis = vegdist(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)], method="bray")
         mod = betadisper(dis, reference_amesbury$Site)
         anova(mod)      # p>0.05, proceed
         # plot(mod)
     
-    adonis2(amesbury_data_vegan_NMDS[,4:58] ~ Site, 
-            data = reference_amesbury, 
-            permutations = 999,
-            method = "bray")                        # no, p>0.05
+        adonis2(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)] ~ qualitative_transect_position * Site, 
+                data = reference_amesbury, 
+                permutations = 9999,
+                method = "bray")                        # no, p>0.05
+    
+        
+    # difference in community based on transect's position on reef within each site?
+        # Asan
+        asan_amesbury_data_vegan_NMDS = 
+            amesbury_data_vegan_NMDS %>%
+                filter(Site == "Asan")
+        
+        asan_reference_amesbury = 
+            reference_amesbury %>%
+            filter(Site == "Asan")
+        
+                # assumption: do groups have homogeneous variances? 
+                dis = vegdist(asan_amesbury_data_vegan_NMDS[,4:ncol(asan_amesbury_data_vegan_NMDS)],
+                              method="bray")
+                mod = betadisper(dis, asan_reference_amesbury$qualitative_transect_position)
+                anova(mod)      # p>0.05, proceed
+                # plot(mod)
+        
+        adonis2(asan_amesbury_data_vegan_NMDS[,4:ncol(asan_amesbury_data_vegan_NMDS)] ~ qualitative_transect_position, 
+                data = asan_reference_amesbury, 
+                permutations = 9999,
+                method = "bray")                    # no, p>0.05
+    
+        # Agat
+        agat_amesbury_data_vegan_NMDS = 
+            amesbury_data_vegan_NMDS %>%
+            filter(Site == "Agat")
+        
+        agat_reference_amesbury = 
+            reference_amesbury %>%
+            filter(Site == "Agat")
+        
+                # assumption: do groups have homogeneous variances? 
+                dis = vegdist(agat_amesbury_data_vegan_NMDS[,4:ncol(agat_amesbury_data_vegan_NMDS)],
+                              method="bray")
+                mod = betadisper(dis, agat_reference_amesbury$qualitative_transect_position)
+                anova(mod)      # p>0.05, proceed
+                # plot(mod)
+        
+        adonis2(agat_amesbury_data_vegan_NMDS[,4:ncol(agat_amesbury_data_vegan_NMDS)] ~ qualitative_transect_position, 
+                data = agat_reference_amesbury, 
+                permutations = 9999,
+                method = "bray")                    # no, p>0.05    
+
     
     # # difference in community based on transect number? --> no (which is good), p>0.05
-    # adonis2(amesbury_data_vegan_NMDS[,4:58] ~ Transect, 
-    #         data = reference_amesbury, 
-    #         permutations = 999,
+    # adonis2(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)] ~ Transect,
+    #         data = reference_amesbury,
+    #         permutations = 9999,
     #         method = "bray")
-    # 
-    # # difference in community based on site, transect position, transect number? --> kinda?, p<0.05
-    # adonis2(amesbury_data_vegan_NMDS[,4:58] ~ Site + `Position on Reef`, 
-    #         data = reference_amesbury, 
-    #         permutations = 999,
-    #         method = "bray", 
-    #         by = "margin")
-    
 
-## 4. which species are most responsible for differences?
     
-    # # example from internet, would need to change things around
-    # permanova = #the permanova function
-    # coef <- coefficients(permanova)["group1",]
-    # top.coef <- coef[rev(order(abs(coef)))[1:20]]
-    # par(mar = c(3, 14, 2, 1))
-    # barplot(sort(top.coef), horiz = T, las = 1, main = "Top taxa")
+## 4. Diversity
     
+    amesbury_summary %>%
+        filter(`Position on Reef` == "reef flat") %>%
+        group_by(Site, reefflat_transect_position) %>%
+        summarise(mean_sp_richness = mean(Diversity), 
+                  std_error_sp_richness = std.error(Diversity))
     
+    # overall difference between sites
+    amesbury_summary %>%
+        filter(`Position on Reef` == "reef flat") %>%
+        anova_test(Diversity ~ Site * reefflat_transect_position)
+    
+        # check assumptions
+            # homogeneity of variance --> p>0.05 is good
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                levene_test(Diversity ~ Site)
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                levene_test(Diversity ~ reefflat_transect_position)
+            # normality --> p>0.05 is good
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                group_by(Site) %>%
+                shapiro_test(Diversity)
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                group_by(Site) %>%
+                shapiro_test(Diversity)
+            
+    # difference between inner and outer flat within each site
+    amesbury_summary %>%
+        filter(`Position on Reef` == "reef flat") %>%
+        group_by(Site) %>%
+            anova_test(Diversity ~ reefflat_transect_position)
+            
+        # check assumptions
+            # homogeneity of variance --> p>0.05 is good
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                group_by(Site) %>%
+                levene_test(Diversity ~ reefflat_transect_position)
+            # normality --> p>0.05 is good
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                group_by(Site, reefflat_transect_position) %>%
+                shapiro_test(Diversity)
+            
+
+## 5. Percent Cover
+    
+    amesbury_summary %>%
+        filter(`Position on Reef` == "reef flat") %>%
+        group_by(Site, reefflat_transect_position) %>%
+        summarise(mean_percent_cover = mean(`Percent Coral Cover`), 
+                  std_error_percent_cover = std.error(`Percent Coral Cover`))
+    
+    # overall differences
+    amesbury_summary %>%
+        filter(`Position on Reef` == "reef flat") %>%
+        anova_test(`Percent Coral Cover` ~ Site * reefflat_transect_position)
+    
+        # check assumptions
+            # homogeneity of variance --> p>0.05 is good
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                levene_test(`Percent Coral Cover` ~ Site)
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                levene_test(`Percent Coral Cover` ~ reefflat_transect_position)
+            # normality --> p>0.05 is good
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                group_by(Site) %>%
+                shapiro_test(`Percent Coral Cover`)
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                group_by(reefflat_transect_position) %>%
+                shapiro_test(`Percent Coral Cover`)
+    
+    # difference between inner and outer flat within each site
+    amesbury_summary %>%
+        filter(`Position on Reef` == "reef flat") %>%
+        group_by(Site) %>%
+        anova_test(`Percent Coral Cover` ~ reefflat_transect_position)
+    
+        # check assumptions
+            # homogeneity of variance --> p>0.05 is good
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                group_by(Site) %>%
+                levene_test(`Percent Coral Cover` ~ reefflat_transect_position)
+            # normality --> p>0.05 is good
+            amesbury_summary %>%
+                filter(`Position on Reef` == "reef flat") %>%
+                group_by(Site, reefflat_transect_position) %>%
+                shapiro_test(`Percent Coral Cover`)
     
     
