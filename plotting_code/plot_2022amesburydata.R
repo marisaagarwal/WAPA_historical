@@ -153,11 +153,11 @@
 
 ## 7. Plot community composition barchart
     
-    amesbury_data %>%
-        ggplot(aes(x = as.character(Transect), y = Value, fill = `Species Listed (2022 taxonomy)`)) +
-        geom_bar(position = "fill", stat = "identity") +
-        facet_wrap(~qualitative_transect_position) +
-        theme_light()
+    # amesbury_data %>%
+    #     ggplot(aes(x = as.character(Transect), y = Value, fill = `Species Listed (2022 taxonomy)`)) +
+    #     geom_bar(position = "fill", stat = "identity") +
+    #     facet_wrap(~qualitative_transect_position) +
+    #     theme_light()
             
   current_community_long = 
       current_data_vegan %>%
@@ -202,7 +202,7 @@
         geom_col(position = "dodge") +
         geom_errorbar(aes(ymin = mean_coral_area - std_error_coral_area,
                           ymax = mean_coral_area + std_error_coral_area),
-                      position = position_dodge(0.9), width = 0.2) +
+                      position = position_dodge(0.9), width = 0.2) 
         # facet_wrap(~site, ncol = 1)
       
 

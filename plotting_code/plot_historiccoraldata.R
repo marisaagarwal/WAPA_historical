@@ -77,6 +77,16 @@
         facet_wrap(~Site) +
         theme_light()
     
+
+## 4. Plot species accumulation curves
+    
+    combined_historic_specaccum_curves %>%
+        ggplot(aes(x = transect, y = richness, color = position)) +
+            geom_point() +
+            geom_line() +
+            facet_wrap(~site) +
+            theme_light()
+    
     
     
     

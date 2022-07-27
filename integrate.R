@@ -8,6 +8,7 @@
 ##                 2. Analyze data to fulfill research objective with focus on:
 ##                      - diversity
 ##                      - community structure & variation (NMDS)
+##                      - species accumulation
 ##                 3. Compare to field surveys done in 2022
 ##
 ##  Authors:       Marisa Agarwal

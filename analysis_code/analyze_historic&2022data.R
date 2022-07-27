@@ -35,27 +35,43 @@
     
     # check assumptions
         # homogeneity of variance --> p>0.05 is good
-        levene_test(percent_cover ~ survey_year * site, data = summary_acrossyears)
+        levene_test(percent_cover ~ survey_year * site * qualitative_transect_position,
+                    data = summary_acrossyears)
         # normality --> p>0.05 is good
         summary_acrossyears %>%
-            group_by(survey_year, site) %>%
+            group_by(survey_year) %>%
+            shapiro_test(percent_cover)
+        summary_acrossyears %>%
+            group_by(site) %>%
+            shapiro_test(percent_cover)
+        summary_acrossyears %>%
+            group_by(qualitative_transect_position) %>%
             shapiro_test(percent_cover)
         
-    # perform anova with interaction effect
-    summary(aov(percent_cover ~ survey_year * site, data = summary_acrossyears))
+    # perform anova with interaction effects
+    summary(aov(percent_cover ~ survey_year * site * qualitative_transect_position,
+                data = summary_acrossyears))
         
 
 ## 4. Compare diversity across time periods
     
     # check assumptions
         # homogeneity of variance --> p>0.05 is good
-        levene_test(sp_richness ~ survey_year * site, data = summary_acrossyears)
+        levene_test(sp_richness ~ survey_year * site * qualitative_transect_position, 
+                    data = summary_acrossyears)
         # normality --> p>0.05 is good
         summary_acrossyears %>%
-            group_by(survey_year, site) %>%
+            group_by(survey_year) %>%
+            shapiro_test(sp_richness)
+        summary_acrossyears %>%
+            group_by(site) %>%
+            shapiro_test(sp_richness)
+        summary_acrossyears %>%
+            group_by(qualitative_transect_position) %>%
             shapiro_test(sp_richness)
     
-    # perform anova with interaction effect
-    summary(aov(sp_richness ~ survey_year * site, data = summary_acrossyears))    
+    # perform anova with interaction effects
+    summary(aov(sp_richness ~ survey_year * site * qualitative_transect_position,
+                data = summary_acrossyears))    
     
     

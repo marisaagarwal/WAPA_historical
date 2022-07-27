@@ -241,5 +241,63 @@
                 filter(`Position on Reef` == "reef flat") %>%
                 group_by(Site, reefflat_transect_position) %>%
                 shapiro_test(`Percent Coral Cover`)
+            
+
+## 6. Species Accumulation
+            
+    # specaccum across all transects
+    historic_specaccum_all = specaccum(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)])      
+    historic_specaccum_all = with(historic_specaccum_all, data.frame(sites, richness, sd)) 
+    historic_specaccum_all %<>%
+        rename(transect = "sites")
+
+    # specaccum by transect's position on reef & site
+        
+    amesbury_ASAN_inner = amesbury_data_vegan_NMDS %>% 
+        filter(Site == "Asan") %>%
+        filter(qualitative_transect_position == "inner_flat")
+    historic_specaccum_ASAN_innerflat = specaccum(amesbury_ASAN_inner[,4:ncol(amesbury_ASAN_inner)])
+    historic_specaccum_ASAN_innerflat = with(historic_specaccum_ASAN_innerflat, data.frame(sites, richness, sd)) 
+    historic_specaccum_ASAN_innerflat %<>%
+        rename(transect = "sites") %>%
+        mutate(site = "Asan", 
+               position = "inner_flat")
     
+    amesbury_ASAN_outer = amesbury_data_vegan_NMDS %>% 
+        filter(Site == "Asan") %>%
+        filter(qualitative_transect_position == "outer_flat")
+    historic_specaccum_ASAN_outerflat = specaccum(amesbury_ASAN_outer[,4:ncol(amesbury_ASAN_outer)])
+    historic_specaccum_ASAN_outerflat = with(historic_specaccum_ASAN_outerflat, data.frame(sites, richness, sd)) 
+    historic_specaccum_ASAN_outerflat %<>%
+        rename(transect = "sites") %>%
+        mutate(site = "Asan", 
+               position = "outer_flat")
+    
+    amesbury_AGAT_inner = amesbury_data_vegan_NMDS %>% 
+        filter(Site == "Agat") %>%
+        filter(qualitative_transect_position == "inner_flat")
+    historic_specaccum_AGAT_innerflat = specaccum(amesbury_AGAT_inner[,4:ncol(amesbury_AGAT_inner)])
+    historic_specaccum_AGAT_innerflat = with(historic_specaccum_AGAT_innerflat, data.frame(sites, richness, sd)) 
+    historic_specaccum_AGAT_innerflat %<>%
+        rename(transect = "sites") %>%
+        mutate(site = "Agat", 
+               position = "inner_flat")
+    
+    amesbury_AGAT_outer = amesbury_data_vegan_NMDS %>% 
+        filter(Site == "Agat") %>%
+        filter(qualitative_transect_position == "outer_flat")
+    historic_specaccum_AGAT_outerflat = specaccum(amesbury_AGAT_outer[,4:ncol(amesbury_AGAT_outer)])
+    historic_specaccum_AGAT_outerflat = with(historic_specaccum_AGAT_outerflat, data.frame(sites, richness, sd)) 
+    historic_specaccum_AGAT_outerflat %<>%
+        rename(transect = "sites") %>%
+        mutate(site = "Agat", 
+               position = "outer_flat")
+    
+    combined_historic_specaccum_curves = 
+        rbind(historic_specaccum_ASAN_innerflat, historic_specaccum_ASAN_outerflat,
+              historic_specaccum_AGAT_innerflat, historic_specaccum_AGAT_outerflat) %>%
+        mutate(year = 1999)
+    
+    
+
     
