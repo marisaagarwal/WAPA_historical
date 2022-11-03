@@ -1,7 +1,7 @@
 #2022-03-24
 
 
-## 1. Set up
+## 1. Set up ----
 
     # point to data locale
     data_locale = "creation_code/"
@@ -10,7 +10,7 @@
     source(paste0(data_locale, "create_historiccoraldata.R"))
     
     
-## 2. NMDS (reef flat data only) 
+## 2. NMDS (species level) ----
     
     # conduct NMDS 
     historiccoral_NMDS = metaMDS(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)], 
@@ -68,9 +68,82 @@
     
     significant_historic_species_scores = subset(historic_species_scores,
                                                  pval <= 0.05)                          #subset data to show species significant at 0.05
+
+
+## 2.5. NMDS (genus level) ----
+    
+    amesbury_data_vegan_NMDS_genus = 
+        amesbury_data_vegan_NMDS %>%
+            pivot_longer(cols = c(4:ncol(amesbury_data_vegan_NMDS)), 
+                                      names_to = "name", 
+                                      values_to = "count") %>%
+            separate(col = name, sep = " ", into = c("genus", "species")) %>%
+            group_by(Site, Transect, qualitative_transect_position, genus) %>%
+            summarise(count = sum(count)) %>%
+            pivot_wider(names_from = genus, values_from = count)
+    
+    # conduct NMDS 
+    historiccoral_NMDS_genus = metaMDS(amesbury_data_vegan_NMDS_genus[,4:ncol(amesbury_data_vegan_NMDS_genus)], 
+                                 k = 2,
+                                 distance = "bray", 
+                                 trymax = 100)
+    
+    # examine stressplot & baseplot
+    stressplot(historiccoral_NMDS_genus)
+    plot(historiccoral_NMDS_genus)
+    
+    # create parsed down grouping dataframe and add row_ID column
+    reference_amesbury_genus = 
+        amesbury_data_vegan_NMDS_genus %>%
+        dplyr::select(c(Site, Transect, qualitative_transect_position)) %>%
+        ungroup() %>%
+        mutate(row_ID = row_number())
+    
+    # extract data for plotting
+    plotting_historic_NMDS_genus = 
+        scores(historiccoral_NMDS_genus, display = "sites") %>% 
+        as.data.frame() %>% 
+        rownames_to_column("row_ID")
+    
+    plotting_historic_NMDS_genus = merge(reference_amesbury_genus, plotting_historic_NMDS_genus)
+    
+    
+    # fit environmental and species vectors
+    historiccoral_envfit_genus =
+        envfit(historiccoral_NMDS_genus, 
+               reference_amesbury_genus, 
+               permutations = 999) # this fits environmental vectors
+    
+    historiccoral_speciesfit_genus =
+        envfit(historiccoral_NMDS_genus, 
+               amesbury_data_vegan_NMDS_genus[,4:ncol(amesbury_data_vegan_NMDS_genus)], 
+               permutations = 999) # this fits species vectors
+    
+    
+    # which species contribute to differences in NMDS plots?
+    historic_species_scores_genus =
+        as.data.frame(scores(historiccoral_speciesfit_genus,
+                             display = "vectors"))                                      #save species intrinsic values into dataframe
+    
+    historic_species_scores_genus = cbind(historic_species_scores_genus, 
+                                    Species = rownames(historic_species_scores_genus))        #add species names to dataframe
+    
+    historic_species_scores_genus = cbind(historic_species_scores_genus,
+                                    pval = historiccoral_speciesfit_genus$vectors$pvals)      #add pvalues to dataframe so you can select species which are significant
+    
+    
+    historic_species_scores_genus = cbind(historic_species_scores_genus,
+                                    abrev = abbreviate(historic_species_scores_genus$Species,
+                                                       minlength = 4, 
+                                                       method = "both"))                #abbreviate species names
+    
+    significant_historic_species_scores_genus = subset(historic_species_scores_genus,
+                                                 pval <= 0.05)                          #subset data to show species significant at 0.05
+    
+    
     
 
-## 3. PERMANOVA (test for stat sig differences between groups)
+## 3. PERMANOVA (test for stat sig differences between groups) ----
 
     # difference in community based on transect's position on reef or site? 
     
@@ -84,7 +157,7 @@
         dis = vegdist(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)], method="bray")
         mod = betadisper(dis, reference_amesbury$Site)
         anova(mod)      # p>0.05, proceed
-        # plot(mod)
+            # plot(mod)
     
         adonis2(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)] ~ qualitative_transect_position * Site, 
                 data = reference_amesbury, 
@@ -143,7 +216,7 @@
     #         method = "bray")
 
     
-## 4. Diversity
+## 4. Diversity ----
     
     amesbury_summary %>%
         filter(`Position on Reef` == "reef flat") %>%
@@ -192,8 +265,18 @@
                 group_by(Site, reefflat_transect_position) %>%
                 shapiro_test(Diversity)
             
+       # # pairsise t-tests      
+       #      amesbury_summary %>%
+       #          filter(`Position on Reef` == "reef flat") %>%
+       #          filter(Site == "Agat") %>%
+       #          t_test(Diversity ~ reefflat_transect_position)    
+       #      amesbury_summary %>%
+       #          filter(`Position on Reef` == "reef flat") %>%
+       #          filter(Site == "Asan") %>%
+       #          t_test(Diversity ~ reefflat_transect_position) 
+            
 
-## 5. Percent Cover
+## 5. Percent Cover ----
     
     amesbury_summary %>%
         filter(`Position on Reef` == "reef flat") %>%
@@ -205,6 +288,10 @@
     amesbury_summary %>%
         filter(`Position on Reef` == "reef flat") %>%
         anova_test(`Percent Coral Cover` ~ Site * reefflat_transect_position)
+    
+    amesbury_summary %>%
+        filter(`Position on Reef` == "reef flat") %>%
+        t_test(`Percent Coral Cover` ~ Site)
     
         # check assumptions
             # homogeneity of variance --> p>0.05 is good
@@ -243,7 +330,7 @@
                 shapiro_test(`Percent Coral Cover`)
             
 
-## 6. Species Accumulation
+## 6. Species Accumulation ----
             
     # specaccum across all transects
     historic_specaccum_all = specaccum(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)])      

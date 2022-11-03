@@ -1,7 +1,7 @@
 #2022-05-16
 
 
-## 1. Set up
+## 1. Set up ----
 
     # point to data locale
     data_locale = "creation_code/"
@@ -10,16 +10,16 @@
     source(paste0(data_locale, "create_2022amesburydata.R"))
     
     
-## 2. Alpha Diversity Calculation 
+## 2. Alpha Diversity Calculation ----
     
     diversity_2022 = 
         all_data %>%
             group_by(site, transect, ID) %>%
             summarise(sp_richness = length(unique(species))) %>%
             mutate(ID = paste(site, "_", transect))
-            
+    
   
-## 3. PCQM Percent Cover Calculation
+## 3. PCQM Percent Cover Calculation ----
     
     # load in functions from Mitchell (2007)
     source("http://math.hws.edu/pcqm/pcqm.txt")
@@ -77,13 +77,13 @@
         percent_cover_output = merge(transect_ID, percent_cover_output)
         
              
-## 4. Combining metadata, diversity, and % cover outputs
+## 4. Combining metadata, diversity, and % cover outputs ----
         
     surveysummary_2022 = merge(metadata, diversity_2022) 
     surveysummary_2022 = merge(surveysummary_2022, percent_cover_output)
     
     
-## 5. Diversity Analysis
+## 5. Diversity Analysis ----
     
     # differences in richness by site
     surveysummary_2022 %>%
@@ -92,6 +92,10 @@
     # differences in richness by location of transect on reef
     surveysummary_2022 %>%
         t_test(sp_richness ~ qualitative_transect_position)
+    
+    surveysummary_2022 %>%
+        group_by(site) %>%
+        anova_test(sp_richness ~ qualitative_transect_position)
     
     # differences in richness by transect's location on reef for each site
         #Asan
@@ -104,11 +108,15 @@
             t_test(sp_richness ~ qualitative_transect_position)
         
     
-## 6. Percent Cover Analysis
+## 6. Percent Cover Analysis ----
     
     # differences in percent coral cover by site
     surveysummary_2022 %>%
         t_test(percent_cover ~ site)
+        
+    surveysummary_2022 %>%
+        group_by(site) %>%
+        summarise(mean_percentcover = mean(percent_cover))
         
     # differences in percent coral cover by location of transect on reef
     surveysummary_2022 %>%
@@ -126,7 +134,7 @@
     
         
         
-## 7. Community Composition Analysis: NMDS approach
+## 7. NMDS (species level) ----
         
     # set up data        
     current_data_vegan = 
@@ -211,10 +219,172 @@
     
     significant_current_env_scores = subset(current_env_scores,
                                                 pval <= 0.05)                          #subset data to show environmental factors significant at 0.05
+
     
+## 8. PERMANOVA of NMDS (species level) ----
+
+    # difference in community based on transect's position on reef or site? 
+    
+        # transect position assumption: do groups have homogeneous variances? 
+        dis = vegdist(current_data_vegan[,5:ncol(current_data_vegan)], method="bray")
+        mod = betadisper(dis, reference_current$qualitative_transect_position)
+        anova(mod)      # p>0.05, proceed
+            # plot(mod)
         
-        
-## 8. Environmental Factors (distance from shore/crest/freshwater)
+        # site assumption: do groups have homogeneous variances? 
+        dis = vegdist(current_data_vegan[,5:ncol(current_data_vegan)], method="bray")
+        mod = betadisper(dis, reference_current$site)
+        anova(mod)      # p>0.05, proceed
+            # plot(mod)
+    
+    adonis2(current_data_vegan[,5:ncol(current_data_vegan)] ~ qualitative_transect_position * site, 
+            data = reference_current, 
+            permutations = 9999,
+            method = "bray")                        # there are differences in community based on site and transect position, p>0.05
+    
+    
+    # difference in community based on transect's position on reef within each site?
+    # Asan
+    asan_current_data_vegan = 
+        current_data_vegan %>%
+        filter(site == "Asan")
+    
+    asan_reference_current = 
+        reference_current %>%
+        filter(site == "Asan")
+    
+            # assumption: do groups have homogeneous variances? 
+            dis = vegdist(asan_current_data_vegan[,5:ncol(asan_current_data_vegan)],
+                          method="bray")
+            mod = betadisper(dis, asan_reference_current$qualitative_transect_position)
+            anova(mod)      # p>0.05, proceed
+                # plot(mod)
+    
+    adonis2(asan_current_data_vegan[,5:ncol(asan_current_data_vegan)] ~ qualitative_transect_position, 
+            data = asan_reference_current, 
+            permutations = 9999,
+            method = "bray")                    # no difference in community, p>0.05
+    
+    # Agat
+    agat_current_data_vegan = 
+        current_data_vegan %>%
+        filter(site == "Agat")
+    
+    agat_reference_current = 
+        reference_current %>%
+        filter(site == "Agat")
+    
+            # assumption: do groups have homogeneous variances? 
+            dis = vegdist(agat_current_data_vegan[,5:ncol(agat_current_data_vegan)],
+                          method="bray")
+            mod = betadisper(dis, agat_reference_current$qualitative_transect_position)
+            anova(mod)      # p>0.05, proceed
+                # plot(mod)
+    
+    adonis2(agat_current_data_vegan[,5:ncol(agat_current_data_vegan)] ~ qualitative_transect_position, 
+            data = agat_reference_current, 
+            permutations = 9999,
+            method = "bray")                    # no, p>0.05    
+    
+    
+## 7.5 NMDS (genus level) ----
+    
+    current_data_vegan_genus = 
+        current_data_vegan %>%
+            pivot_longer(cols = c(5:ncol(current_data_vegan)), 
+                         names_to = "code", 
+                         values_to = "count")
+    
+    current_data_vegan_genus = merge(current_data_vegan_genus, species_codes)
+    
+    current_data_vegan_genus = 
+        current_data_vegan_genus %>%
+            dplyr::select(-c(code)) %>%
+            group_by(site, transect, qualitative_transect_position, substrate_type, genus) %>%
+            summarise(count = sum(count)) %>%
+                pivot_wider(names_from = genus, values_from = count)
+    
+    # conduct NMDS 
+    currentcoral_genus_NMDS = metaMDS(current_data_vegan_genus[,5:ncol(current_data_vegan_genus)], 
+                                k = 2,
+                                distance = "bray", 
+                                trymax = 100)
+    
+    # examine stressplot & baseplot
+    stressplot(currentcoral_genus_NMDS)
+    plot(currentcoral_genus_NMDS)
+    
+    # create parsed down grouping dataframe and add row_ID column
+    reference_current_genus = 
+        current_data_vegan_genus %>%
+        dplyr::select(c(site, transect, qualitative_transect_position, substrate_type)) %>%
+        ungroup() %>%
+        mutate(row_ID = row_number())
+    
+    # extract data for plotting
+    plotting_current_genus_NMDS = 
+        scores(currentcoral_genus_NMDS, display = "sites") %>% 
+        as.data.frame() %>% 
+        rownames_to_column("row_ID")
+    
+    plotting_current_genus_NMDS = merge(reference_current_genus, plotting_current_genus_NMDS)
+    
+    # fit environmental and species vectors
+    currentcoral_envfit_genus =
+        envfit(currentcoral_genus_NMDS, 
+               reference_current_genus, 
+               permutations = 999,
+               na.rm = TRUE) # this fits environmental vectors
+    
+    currentcoral_speciesfit_genus =
+        envfit(currentcoral_genus_NMDS, 
+               current_data_vegan_genus[,5:ncol(current_data_vegan_genus)], 
+               permutations = 999,
+               na.rm = T) # this fits species vectors      
+    
+    # which species contribute to differences in NMDS plots?
+    current_species_scores_genus =
+        as.data.frame(scores(currentcoral_speciesfit_genus,
+                             display = "vectors"))                                      #save species intrinsic values into dataframe
+    
+    current_species_scores_genus = cbind(current_species_scores_genus, 
+                                   Species = rownames(current_species_scores_genus))        #add species names to dataframe
+    
+    current_species_scores_genus = cbind(current_species_scores_genus,
+                                   pval = currentcoral_speciesfit_genus$vectors$pvals)      #add pvalues to dataframe so you can select species which are significant
+    
+    
+    current_species_scores_genus = cbind(current_species_scores_genus,
+                                   abrev = abbreviate(current_species_scores_genus$Species,
+                                                      minlength = 4, 
+                                                      method = "both"))                #abbreviate species names
+    
+    significant_current_species_scores_genus = subset(current_species_scores_genus,
+                                                pval <= 0.05)                          #subset data to show species significant at 0.05
+    
+    # which environmental factors contribute to differences in NMDS plots?
+    current_env_scores_genus =
+        as.data.frame(scores(currentcoral_envfit_genus,
+                             display = "vectors"))                                      #save species intrinsic values into dataframe
+    
+    current_env_scores_genus = cbind(current_env_scores_genus, 
+                               Species = rownames(current_env_scores_genus))        #add species names to dataframe
+    
+    current_env_scores_genus = cbind(current_env_scores_genus,
+                               pval = currentcoral_envfit_genus$vectors$pvals)      #add pvalues to dataframe so you can select species which are significant
+    
+    
+    # current_env_scores = cbind(current_env_scores,
+    #                                abrev = abbreviate(current_env_scores$Species,
+    #                                                   minlength = 4, 
+    #                                                   method = "both"))                #abbreviate environmental factor names
+    
+    significant_current_env_scores_genus = subset(current_env_scores_genus,
+                                            pval <= 0.05)                          #subset data to show environmental factors significant at 0.05
+    
+    
+    
+## 8. Environmental Factors (distance from shore/crest/freshwater) ----
     
     # diversity and distance to shore, % cover and distance to shore
     summary(lm(sp_richness ~ dist_to_shore_m, data = surveysummary_2022))
@@ -229,11 +399,11 @@
     summary(lm(percent_cover ~ dist_to_freshwater_m, data = surveysummary_2022))
     
     
-## 9. Coral Size Analysis
+## 9. Coral Size Analysis ----
     
     # differences in coral size by species, transect's location on reef, & site
     
-        # currently failing bc not enough data for each species
+        # currently failing bc not enough data for each species?
         full_join(x = all_data %>%
                       mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
                   y = surveysummary_2022) %>%
@@ -250,6 +420,61 @@
         group_by(site, qualitative_transect_position, species) %>%
         summarise(mean_coral_area = mean(area_cm2),
                   std_error_coral_area = std.error(area_cm2))
+    
+
+## 10. Species Accumulation Curves ----
+    
+    # specaccum across all transects
+    current_specaccum_all = specaccum(current_data_vegan[,5:ncol(current_data_vegan)])      
+    current_specaccum_all = with(current_specaccum_all, data.frame(sites, richness, sd)) 
+    current_specaccum_all %<>%
+        rename(transect = "sites")
+    
+    # specaccum by transect's position on reef & site
+    current_ASAN_inner = current_data_vegan %>% 
+        filter(site == "Asan") %>%
+        filter(qualitative_transect_position == "inner_flat")
+    current_specaccum_ASAN_innerflat = specaccum(current_ASAN_inner[,5:ncol(current_ASAN_inner)])
+    current_specaccum_ASAN_innerflat = with(current_specaccum_ASAN_innerflat, data.frame(sites, richness, sd)) 
+    current_specaccum_ASAN_innerflat %<>%
+        rename(transect = "sites") %>%
+        mutate(site = "Asan", 
+               position = "inner_flat")
+    
+    current_ASAN_outer = current_data_vegan %>% 
+        filter(site == "Asan") %>%
+        filter(qualitative_transect_position == "outer_flat")
+    current_specaccum_ASAN_outerflat = specaccum(current_ASAN_outer[,5:ncol(current_ASAN_outer)])
+    current_specaccum_ASAN_outerflat = with(current_specaccum_ASAN_outerflat, data.frame(sites, richness, sd)) 
+    current_specaccum_ASAN_outerflat %<>%
+        rename(transect = "sites") %>%
+        mutate(site = "Asan", 
+               position = "outer_flat")
+    
+    current_AGAT_inner = current_data_vegan %>% 
+        filter(site == "Agat") %>%
+        filter(qualitative_transect_position == "inner_flat")
+    current_specaccum_AGAT_innerflat = specaccum(current_AGAT_inner[,5:ncol(current_AGAT_inner)])
+    current_specaccum_AGAT_innerflat = with(current_specaccum_AGAT_innerflat, data.frame(sites, richness, sd)) 
+    current_specaccum_AGAT_innerflat %<>%
+        rename(transect = "sites") %>%
+        mutate(site = "Agat", 
+               position = "inner_flat")
+    
+    current_AGAT_outer = current_data_vegan %>% 
+        filter(site == "Agat") %>%
+        filter(qualitative_transect_position == "outer_flat")
+    current_specaccum_AGAT_outerflat = specaccum(current_AGAT_outer[,5:ncol(current_AGAT_outer)])
+    current_specaccum_AGAT_outerflat = with(current_specaccum_AGAT_outerflat, data.frame(sites, richness, sd)) 
+    current_specaccum_AGAT_outerflat %<>%
+        rename(transect = "sites") %>%
+        mutate(site = "Agat", 
+               position = "outer_flat")
+    
+    combined_current_specaccum_curves = 
+        rbind(current_specaccum_ASAN_innerflat, current_specaccum_ASAN_outerflat,
+              current_specaccum_AGAT_innerflat, current_specaccum_AGAT_outerflat) %>%
+        mutate(year = 2022)
     
 
     
