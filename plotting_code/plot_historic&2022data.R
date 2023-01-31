@@ -37,8 +37,44 @@
                 facet_wrap(~site) +
                 labs(fill = "Survey Year",
                      x = "Reef Flat Position",
-                     y = "Percent Cover") +
+                     y = "Mean Percent Cover") +
                 theme_pubr(legend = "right") 
+    
+    
+    stat.test_cover = summary_acrossyears %>%
+        group_by(site, qualitative_transect_position) %>%
+        t_test(percent_cover ~ survey_year) %>% 
+        add_significance(p.col = "p", 
+                         output.col = "p.adj.signif", 
+                         cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+                         symbols = c("***", "**", "*", "ns")) %>%
+        add_xy_position(x = "qualitative_transect_position", dodge = 0.9) %>%
+        mutate(y.position = c(6, 2, 45, 10))
+    
+    ggbarplot(summary_acrossyears, 
+              x = "qualitative_transect_position", y = "percent_cover", 
+              fill = "survey_year",
+              add = "mean_se",
+              position = position_dodge(0.8),
+              facet.by = "site") +
+        scale_x_discrete(labels=c("inner_flat" = "Inner", 
+                                  "outer_flat" = "Outer"),
+                         limits = c("inner_flat", "outer_flat")) +
+        scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
+        stat_pvalue_manual(stat.test_cover, label = "p.adj.signif", tip.length = 0.01, hide.ns = T) +
+        # geom_text(aes(x = qualitative_transect_position,
+        #               y = 0,
+        #               label = paste("n =",percent_cover,"\n"),
+        #               group = survey_year),
+        #           aggregate(. ~ qualitative_transect_position + survey_year, summary_acrossyears, length),
+        #           position = position_dodge(.8))
+        # stat_n_text(y.pos = -2, size = 3,inherit.aes = T) +
+        labs(fill = "Survey Year",
+             x = "Reef Flat Zone",
+             y = "Mean Percent Cover") +
+        theme_pubr(legend = "right") 
+        
+    
     
 
 ## 3.  Plot species richness ----
@@ -68,9 +104,35 @@
             facet_wrap(~site) +
             labs(fill = "Survey Year",
                  x = "Reef Flat Position",
-                 y = "Species Richness") +
+                 y = "Mean Species Richness") +
             theme_pubr(legend = "right") 
     
+    
+    stat.test_richness = summary_acrossyears %>%
+        group_by(site, qualitative_transect_position) %>%
+        t_test(sp_richness ~ survey_year) %>% 
+        add_significance(p.col = "p", 
+                         output.col = "p.adj.signif", 
+                         cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+                         symbols = c("***", "**", "*", "ns")) %>%
+        add_xy_position(x = "qualitative_transect_position", dodge = 0.9) %>%
+        mutate(y.position = c(3.4, 8, 6.5, 6.5))
+    
+    ggbarplot(summary_acrossyears, 
+              x = "qualitative_transect_position", y = "sp_richness", 
+              fill = "survey_year",
+              add = "mean_se",
+              position = position_dodge(0.8),
+              facet.by = "site") +
+        scale_x_discrete(labels=c("inner_flat" = "Inner", 
+                                  "outer_flat" = "Outer"), 
+                         limits = c("inner_flat", "outer_flat")) +
+        scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
+        stat_pvalue_manual(stat.test_richness, label = "p.adj.signif", tip.length = 0.01, hide.ns = T) +
+        labs(fill = "Survey Year",
+             x = "Reef Flat Zone",
+             y = "Mean Species Richness") +
+        theme_pubr(legend = "right") 
     
     
 ## 4. Plot species accumulation curves ----

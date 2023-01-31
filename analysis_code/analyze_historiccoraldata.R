@@ -145,6 +145,7 @@
 
 ## 3. PERMANOVA (test for stat sig differences between groups) ----
 
+    # species-level
     # difference in community based on transect's position on reef or site? 
     
         # transect position assumption: do groups have homogeneous variances? 
@@ -159,61 +160,81 @@
         anova(mod)      # p>0.05, proceed
             # plot(mod)
     
-        adonis2(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)] ~ qualitative_transect_position * Site, 
-                data = reference_amesbury, 
-                permutations = 9999,
-                method = "bray")                        # no, p>0.05
+    adonis2(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)] ~ qualitative_transect_position * Site, 
+            data = reference_amesbury, 
+            permutations = 9999,
+            method = "bray")                        # no, p>0.05
+    
+    # genus-level
+    # difference in community based on transect's position on reef or site? 
+    
+        # transect position assumption: do groups have homogeneous variances? 
+        dis = vegdist(amesbury_data_vegan_NMDS_genus[,4:ncol(amesbury_data_vegan_NMDS_genus)],method="bray")
+        mod = betadisper(dis, reference_amesbury_genus$qualitative_transect_position)
+        anova(mod)      # p>0.05, proceed
+        # plot(mod)
+        
+        # site assumption: do groups have homogeneous variances? 
+        dis = vegdist(amesbury_data_vegan_NMDS_genus[,4:ncol(amesbury_data_vegan_NMDS_genus)], method="bray")
+        mod = betadisper(dis, reference_amesbury_genus$Site)
+        anova(mod)      # p>0.05, proceed
+        # plot(mod)
+        
+    adonis2(amesbury_data_vegan_NMDS_genus[,4:ncol(amesbury_data_vegan_NMDS_genus)] ~ qualitative_transect_position * Site, 
+            data = reference_amesbury_genus, 
+            permutations = 9999,
+            method = "bray")                        # no, p>0.05
     
         
-    # difference in community based on transect's position on reef within each site?
-        # Asan
-        asan_amesbury_data_vegan_NMDS = 
-            amesbury_data_vegan_NMDS %>%
-                filter(Site == "Asan")
-        
-        asan_reference_amesbury = 
-            reference_amesbury %>%
-            filter(Site == "Asan")
-        
-                # assumption: do groups have homogeneous variances? 
-                dis = vegdist(asan_amesbury_data_vegan_NMDS[,4:ncol(asan_amesbury_data_vegan_NMDS)],
-                              method="bray")
-                mod = betadisper(dis, asan_reference_amesbury$qualitative_transect_position)
-                anova(mod)      # p>0.05, proceed
-                # plot(mod)
-        
-        adonis2(asan_amesbury_data_vegan_NMDS[,4:ncol(asan_amesbury_data_vegan_NMDS)] ~ qualitative_transect_position, 
-                data = asan_reference_amesbury, 
-                permutations = 9999,
-                method = "bray")                    # no, p>0.05
-    
-        # Agat
-        agat_amesbury_data_vegan_NMDS = 
-            amesbury_data_vegan_NMDS %>%
-            filter(Site == "Agat")
-        
-        agat_reference_amesbury = 
-            reference_amesbury %>%
-            filter(Site == "Agat")
-        
-                # assumption: do groups have homogeneous variances? 
-                dis = vegdist(agat_amesbury_data_vegan_NMDS[,4:ncol(agat_amesbury_data_vegan_NMDS)],
-                              method="bray")
-                mod = betadisper(dis, agat_reference_amesbury$qualitative_transect_position)
-                anova(mod)      # p>0.05, proceed
-                # plot(mod)
-        
-        adonis2(agat_amesbury_data_vegan_NMDS[,4:ncol(agat_amesbury_data_vegan_NMDS)] ~ qualitative_transect_position, 
-                data = agat_reference_amesbury, 
-                permutations = 9999,
-                method = "bray")                    # no, p>0.05    
-
-    
-    # # difference in community based on transect number? --> no (which is good), p>0.05
-    # adonis2(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)] ~ Transect,
-    #         data = reference_amesbury,
-    #         permutations = 9999,
-    #         method = "bray")
+    # # difference in community based on transect's position on reef within each site?
+    #     # Asan
+    #     asan_amesbury_data_vegan_NMDS = 
+    #         amesbury_data_vegan_NMDS %>%
+    #             filter(Site == "Asan")
+    #     
+    #     asan_reference_amesbury = 
+    #         reference_amesbury %>%
+    #         filter(Site == "Asan")
+    #     
+    #             # assumption: do groups have homogeneous variances? 
+    #             dis = vegdist(asan_amesbury_data_vegan_NMDS[,4:ncol(asan_amesbury_data_vegan_NMDS)],
+    #                           method="bray")
+    #             mod = betadisper(dis, asan_reference_amesbury$qualitative_transect_position)
+    #             anova(mod)      # p>0.05, proceed
+    #             # plot(mod)
+    #     
+    #     adonis2(asan_amesbury_data_vegan_NMDS[,4:ncol(asan_amesbury_data_vegan_NMDS)] ~ qualitative_transect_position, 
+    #             data = asan_reference_amesbury, 
+    #             permutations = 9999,
+    #             method = "bray")                    # no, p>0.05
+    # 
+    #     # Agat
+    #     agat_amesbury_data_vegan_NMDS = 
+    #         amesbury_data_vegan_NMDS %>%
+    #         filter(Site == "Agat")
+    #     
+    #     agat_reference_amesbury = 
+    #         reference_amesbury %>%
+    #         filter(Site == "Agat")
+    #     
+    #             # assumption: do groups have homogeneous variances? 
+    #             dis = vegdist(agat_amesbury_data_vegan_NMDS[,4:ncol(agat_amesbury_data_vegan_NMDS)],
+    #                           method="bray")
+    #             mod = betadisper(dis, agat_reference_amesbury$qualitative_transect_position)
+    #             anova(mod)      # p>0.05, proceed
+    #             # plot(mod)
+    #     
+    #     adonis2(agat_amesbury_data_vegan_NMDS[,4:ncol(agat_amesbury_data_vegan_NMDS)] ~ qualitative_transect_position, 
+    #             data = agat_reference_amesbury, 
+    #             permutations = 9999,
+    #             method = "bray")                    # no, p>0.05    
+    # 
+    # 
+    # # # difference in community based on transect number? --> no (which is good), p>0.05
+    # # adonis2(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)] ~ Transect,
+    # #         data = reference_amesbury,
+    # #         permutations = 9999,
+    # #         method = "bray")
 
     
 ## 4. Diversity ----
@@ -247,33 +268,38 @@
                 group_by(Site) %>%
                 shapiro_test(Diversity)
             
-    # difference between inner and outer flat within each site
-    amesbury_summary %>%
-        filter(`Position on Reef` == "reef flat") %>%
-        group_by(Site) %>%
-            anova_test(Diversity ~ reefflat_transect_position)
+        # post-hoc testing
+        amesbury_summary %>%
+            filter(`Position on Reef` == "reef flat") %>%
+            tukey_hsd(Diversity ~ Site * reefflat_transect_position)
             
-        # check assumptions
-            # homogeneity of variance --> p>0.05 is good
-            amesbury_summary %>%
-                filter(`Position on Reef` == "reef flat") %>%
-                group_by(Site) %>%
-                levene_test(Diversity ~ reefflat_transect_position)
-            # normality --> p>0.05 is good
-            amesbury_summary %>%
-                filter(`Position on Reef` == "reef flat") %>%
-                group_by(Site, reefflat_transect_position) %>%
-                shapiro_test(Diversity)
-            
-       # # pairsise t-tests      
-       #      amesbury_summary %>%
-       #          filter(`Position on Reef` == "reef flat") %>%
-       #          filter(Site == "Agat") %>%
-       #          t_test(Diversity ~ reefflat_transect_position)    
-       #      amesbury_summary %>%
-       #          filter(`Position on Reef` == "reef flat") %>%
-       #          filter(Site == "Asan") %>%
-       #          t_test(Diversity ~ reefflat_transect_position) 
+    # # difference between inner and outer flat within each site
+    # amesbury_summary %>%
+    #     filter(`Position on Reef` == "reef flat") %>%
+    #     group_by(Site) %>%
+    #         anova_test(Diversity ~ reefflat_transect_position)
+    # 
+    #     # check assumptions
+    #         # homogeneity of variance --> p>0.05 is good
+    #         amesbury_summary %>%
+    #             filter(`Position on Reef` == "reef flat") %>%
+    #             group_by(Site) %>%
+    #             levene_test(Diversity ~ reefflat_transect_position)
+    #         # normality --> p>0.05 is good
+    #         amesbury_summary %>%
+    #             filter(`Position on Reef` == "reef flat") %>%
+    #             group_by(Site, reefflat_transect_position) %>%
+    #             shapiro_test(Diversity)
+    # 
+    #    # pairsise t-tests
+    #         amesbury_summary %>%
+    #             filter(`Position on Reef` == "reef flat") %>%
+    #             filter(Site == "Agat") %>%
+    #             t_test(Diversity ~ reefflat_transect_position)
+    #         amesbury_summary %>%
+    #             filter(`Position on Reef` == "reef flat") %>%
+    #             filter(Site == "Asan") %>%
+    #             t_test(Diversity ~ reefflat_transect_position)
             
 
 ## 5. Percent Cover ----
@@ -289,10 +315,6 @@
         filter(`Position on Reef` == "reef flat") %>%
         anova_test(`Percent Coral Cover` ~ Site * reefflat_transect_position)
     
-    amesbury_summary %>%
-        filter(`Position on Reef` == "reef flat") %>%
-        t_test(`Percent Coral Cover` ~ Site)
-    
         # check assumptions
             # homogeneity of variance --> p>0.05 is good
             amesbury_summary %>%
@@ -305,29 +327,31 @@
             amesbury_summary %>%
                 filter(`Position on Reef` == "reef flat") %>%
                 group_by(Site) %>%
-                shapiro_test(`Percent Coral Cover`)
+                mutate(percent_cover = `Percent Coral Cover`) %>%
+                shapiro_test(percent_cover)
             amesbury_summary %>%
                 filter(`Position on Reef` == "reef flat") %>%
                 group_by(reefflat_transect_position) %>%
-                shapiro_test(`Percent Coral Cover`)
+                mutate(percent_cover = `Percent Coral Cover`) %>%
+                shapiro_test(percent_cover)
     
-    # difference between inner and outer flat within each site
-    amesbury_summary %>%
-        filter(`Position on Reef` == "reef flat") %>%
-        group_by(Site) %>%
-        anova_test(`Percent Coral Cover` ~ reefflat_transect_position)
-    
-        # check assumptions
-            # homogeneity of variance --> p>0.05 is good
-            amesbury_summary %>%
-                filter(`Position on Reef` == "reef flat") %>%
-                group_by(Site) %>%
-                levene_test(`Percent Coral Cover` ~ reefflat_transect_position)
-            # normality --> p>0.05 is good
-            amesbury_summary %>%
-                filter(`Position on Reef` == "reef flat") %>%
-                group_by(Site, reefflat_transect_position) %>%
-                shapiro_test(`Percent Coral Cover`)
+    # # difference between inner and outer flat within each site
+    # amesbury_summary %>%
+    #     filter(`Position on Reef` == "reef flat") %>%
+    #     group_by(Site) %>%
+    #     anova_test(`Percent Coral Cover` ~ reefflat_transect_position)
+    # 
+    #     # check assumptions
+    #         # homogeneity of variance --> p>0.05 is good
+    #         amesbury_summary %>%
+    #             filter(`Position on Reef` == "reef flat") %>%
+    #             group_by(Site) %>%
+    #             levene_test(`Percent Coral Cover` ~ reefflat_transect_position)
+    #         # normality --> p>0.05 is good
+    #         amesbury_summary %>%
+    #             filter(`Position on Reef` == "reef flat") %>%
+    #             group_by(Site, reefflat_transect_position) %>%
+    #             shapiro_test(`Percent Coral Cover`)
             
 
 ## 6. Species Accumulation ----

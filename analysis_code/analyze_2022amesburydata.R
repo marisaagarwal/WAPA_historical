@@ -85,54 +85,147 @@
     
 ## 5. Diversity Analysis ----
     
-    # differences in richness by site
+    # summary stats
     surveysummary_2022 %>%
-        t_test(sp_richness ~ site)
-
-    # differences in richness by location of transect on reef
-    surveysummary_2022 %>%
-        t_test(sp_richness ~ qualitative_transect_position)
+        group_by(site, qualitative_transect_position) %>%
+        summarise(mean_sp_richness = mean(sp_richness), 
+                  std_error_sp_richness = std.error(sp_richness))
     
+    # # differences in richness by site
+    # surveysummary_2022 %>%
+    #     t_test(sp_richness ~ site)
+    # 
+    # # differences in richness by location of transect on reef
+    # surveysummary_2022 %>%
+    #     t_test(sp_richness ~ qualitative_transect_position)
+    # 
+    # surveysummary_2022 %>%
+    #     group_by(site) %>%
+    #     anova_test(sp_richness ~ qualitative_transect_position)
+    # 
+    # # differences in richness by transect's location on reef for each site
+    #     #Asan
+    #     surveysummary_2022 %>%
+    #         filter(site == "Asan") %>%
+    #         t_test(sp_richness ~ qualitative_transect_position)
+    #     #Agat
+    #     surveysummary_2022 %>%
+    #         filter(site == "Agat") %>%
+    #         t_test(sp_richness ~ qualitative_transect_position)
+    
+    # overall differences
+    surveysummary_2022 %>%
+        anova_test(sp_richness ~ site * qualitative_transect_position)
+        
+            # check assumptions
+                # homogeneity of variance --> p>0.05 is good
+                surveysummary_2022 %>%
+                    levene_test(sp_richness ~ site)
+                surveysummary_2022 %>%
+                    levene_test(sp_richness ~ qualitative_transect_position)
+                # normality --> p>0.05 is good
+                surveysummary_2022 %>%
+                    group_by(site) %>%
+                    shapiro_test(sp_richness)
+                surveysummary_2022 %>%
+                    group_by(qualitative_transect_position) %>%
+                    shapiro_test(sp_richness)
+                
+            # post-hoc
+            surveysummary_2022 %>%
+                tukey_hsd(sp_richness ~ site * qualitative_transect_position)
+        
+    # difference between inner and outer flat within each site
     surveysummary_2022 %>%
         group_by(site) %>%
-        anova_test(sp_richness ~ qualitative_transect_position)
-    
-    # differences in richness by transect's location on reef for each site
-        #Asan
-        surveysummary_2022 %>%
-            filter(site == "Asan") %>%
-            t_test(sp_richness ~ qualitative_transect_position)
-        #Agat
-        surveysummary_2022 %>%
-            filter(site == "Agat") %>%
-            t_test(sp_richness ~ qualitative_transect_position)
+        t_test(sp_richness ~ qualitative_transect_position)
+        
+        # check assumptions
+            # homogeneity of variance --> p>0.05 is good
+            surveysummary_2022 %>%
+                group_by(site) %>%
+                levene_test(sp_richness ~ qualitative_transect_position)
+            # normality --> p>0.05 is good
+            surveysummary_2022 %>%
+                group_by(qualitative_transect_position) %>%
+                shapiro_test(sp_richness)
         
     
 ## 6. Percent Cover Analysis ----
     
-    # differences in percent coral cover by site
-    surveysummary_2022 %>%
-        t_test(percent_cover ~ site)
-        
-    surveysummary_2022 %>%
-        group_by(site) %>%
-        summarise(mean_percentcover = mean(percent_cover))
-        
-    # differences in percent coral cover by location of transect on reef
-    surveysummary_2022 %>%
-        t_test(percent_cover ~ qualitative_transect_position)
-        
-    # differences in percent cover by transect's location on reef for each site
-        #Asan
-        surveysummary_2022 %>%
-            filter(site == "Asan") %>%
-            t_test(percent_cover ~ qualitative_transect_position)
-        #Agat
-        surveysummary_2022 %>%
-            filter(site == "Agat") %>%
-            t_test(percent_cover ~ qualitative_transect_position)
+    # # differences in percent coral cover by site
+    # surveysummary_2022 %>%
+    #     t_test(percent_cover ~ site)
+    #     
+    # surveysummary_2022 %>%
+    #     group_by(site) %>%
+    #     summarise(mean_percentcover = mean(percent_cover))
+    #     
+    # # differences in percent coral cover by location of transect on reef
+    # surveysummary_2022 %>%
+    #     t_test(percent_cover ~ qualitative_transect_position)
+    #     
+    # # differences in percent cover by transect's location on reef for each site
+    #     #Asan
+    #     surveysummary_2022 %>%
+    #         filter(site == "Asan") %>%
+    #         t_test(percent_cover ~ qualitative_transect_position)
+    #     #Agat
+    #     surveysummary_2022 %>%
+    #         filter(site == "Agat") %>%
+    #         t_test(percent_cover ~ qualitative_transect_position)
     
+   # summary stats
+   surveysummary_2022 %>%
+        group_by(site, qualitative_transect_position) %>%
+        summarise(mean_percent_cover = mean(percent_cover), 
+                  std_error_percent_cover = std.error(percent_cover))   
+            
+    # overall differences
+    surveysummary_2022 %>%
+        mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+        anova_test(transformed_percent_cover ~ site * qualitative_transect_position)
         
+        # check assumptions
+            # homogeneity of variance --> p>0.05 is good
+            surveysummary_2022 %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+                levene_test(transformed_percent_cover ~ site)
+            surveysummary_2022 %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+                levene_test(transformed_percent_cover ~ qualitative_transect_position)
+            # normality --> p>0.05 is good
+            surveysummary_2022 %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+                group_by(site) %>%
+                shapiro_test(transformed_percent_cover)
+            surveysummary_2022 %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+                group_by(qualitative_transect_position) %>%
+                shapiro_test(transformed_percent_cover)
+            
+        # post-hoc testing
+        surveysummary_2022 %>%
+            mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+            tukey_hsd(transformed_percent_cover ~ site * qualitative_transect_position)
+        
+    # difference between inner and outer flat within each site
+    surveysummary_2022 %>%
+        mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+        group_by(site) %>%
+        t_test(transformed_percent_cover ~ qualitative_transect_position)
+
+        # check assumptions
+            # homogeneity of variance --> p>0.05 is good
+            surveysummary_2022 %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+                group_by(site) %>%
+                levene_test(transformed_percent_cover ~ qualitative_transect_position)
+            # normality --> p>0.05 is good
+            surveysummary_2022 %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%
+                group_by(qualitative_transect_position) %>%
+                shapiro_test(transformed_percent_cover)
         
 ## 7. NMDS (species level) ----
         
@@ -284,7 +377,7 @@
     adonis2(agat_current_data_vegan[,5:ncol(agat_current_data_vegan)] ~ qualitative_transect_position, 
             data = agat_reference_current, 
             permutations = 9999,
-            method = "bray")                    # no, p>0.05    
+            method = "bray")                    # yes, p<0.05    
     
     
 ## 7.5 NMDS (genus level) ----
@@ -403,23 +496,23 @@
     
     # differences in coral size by species, transect's location on reef, & site
     
-        # currently failing bc not enough data for each species?
-        full_join(x = all_data %>%
-                      mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
-                  y = surveysummary_2022) %>%
-            dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
-            filter(site == "Asan") %>%
-            group_by(species) %>%
-            t_test(area_cm2 ~ qualitative_transect_position) 
-     
-    summary_species_sizes = 
-        full_join(x = all_data %>%
-                      mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
-                  y = surveysummary_2022) %>%
-        dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
-        group_by(site, qualitative_transect_position, species) %>%
-        summarise(mean_coral_area = mean(area_cm2),
-                  std_error_coral_area = std.error(area_cm2))
+    #     # currently failing bc not enough data for each species?
+    #     full_join(x = all_data %>%
+    #                   mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
+    #               y = surveysummary_2022) %>%
+    #         dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
+    #         filter(site == "Asan") %>%
+    #         group_by(species) %>%
+    #         t_test(area_cm2 ~ qualitative_transect_position) 
+    #  
+    # summary_species_sizes = 
+    #     full_join(x = all_data %>%
+    #                   mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
+    #               y = surveysummary_2022) %>%
+    #     dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
+    #     group_by(site, qualitative_transect_position, species) %>%
+    #     summarise(mean_coral_area = mean(area_cm2),
+    #               std_error_coral_area = std.error(area_cm2))
     
 
 ## 10. Species Accumulation Curves ----

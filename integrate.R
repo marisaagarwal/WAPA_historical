@@ -31,6 +31,7 @@
     rm(list=ls())
     
     # call to core packages for data manipulation
+    library(plyr)
     library(dplyr)
     library(tidyr)
     library(magrittr)      
@@ -53,6 +54,7 @@
     library(easystats)
     library(multcomp)
     library(vegan)
+    library(EnvStats)
     
     # call to visualisation & output generation
     library(ggplot2)
@@ -70,3 +72,5 @@
 
 ## 3. Generate data objects
 ## if things need to be loaded in before every session, include them here
+    
+    

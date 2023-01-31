@@ -9,7 +9,7 @@
     # load in the data
     source(paste0(data_locale, "analyze_2022amesburydata.R"))
     
-    
+
 ## 2. Plot diversity ----
     
     surveysummary_2022 %>%
@@ -99,20 +99,45 @@
 ## 5. Plot NMDS (species level) ----
     
     # NMDS plot of coral communities at each site
+    
+        find_hull = function(plotting_current_NMDS) plotting_current_NMDS[chull(plotting_current_NMDS$NMDS1, plotting_current_NMDS$NMDS2), ]
+        hulls = ddply(plotting_current_NMDS, "site", find_hull)
+    
+    ggplot() +
+        geom_point(data = plotting_current_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = site)) +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = site, color = site),
+                     alpha = 0.3) +
+        geom_segment(data = significant_current_species_scores,
+                     aes(x = 0, xend=NMDS1, y=0, yend=NMDS2),
+                     arrow = arrow(length = unit(0.25, "cm")),
+                     colour = "grey10", 
+                     lwd = 0.3) +
+        ggrepel::geom_text_repel(data = significant_current_species_scores, 
+                                 aes(x=NMDS1, y=NMDS2, 
+                                     label = abrev),
+                                 cex = 3, 
+                                 direction = "both", 
+                                 segment.size = 0.25) +
+        # scale_color_viridis_d()+
+        labs(color = "WAPA Unit", fill = "WAPA Unit") +
+        theme_bw() +
+        theme(panel.background = element_blank(), 
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(), 
+              plot.background = element_blank())
+    
+    
+    
+    
+    # NMDS plot of coral communities at different locations
     plotting_current_NMDS %>%
-        ggplot(aes(x = NMDS1, y = NMDS2, color = site)) +
+        ggplot(aes(x = NMDS1, y = NMDS2, color = qualitative_transect_position)) +
         geom_point(size = 3, alpha = 0.4) +
         geom_text(label = plotting_current_NMDS$transect) +
         stat_ellipse(linetype = 2, size = 1) +
         theme_light()
-    
-    # # NMDS plot of coral communities at different locations along the reef flat
-    # plotting_current_NMDS %>%
-    #     ggplot(aes(x = NMDS1, y = NMDS2, color = qualitative_transect_position)) +
-    #     geom_point(size = 3, alpha = 0.4) +
-    #     geom_text(label = plotting_current_NMDS$transect) +
-    #     stat_ellipse(linetype = 2, size = 1) +
-    #     theme_light()
     
     # NMDS plot of coral communities at different sites & locations on reef flat
     plotting_current_NMDS %>%

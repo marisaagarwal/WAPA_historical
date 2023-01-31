@@ -38,70 +38,77 @@
     specaccum_acrossyears = rbind(combined_current_specaccum_curves, combined_historic_specaccum_curves)
     
     
-## 3. Compare percent cover across time periods ----
+## 3. Compare percent cover across time ----
     
-    # check assumptions
-        # homogeneity of variance --> p>0.05 is good
-        levene_test(percent_cover ~ survey_year * site * qualitative_transect_position,
-                    data = summary_acrossyears)
-        # normality --> p>0.05 is good
-        summary_acrossyears %>%
-            group_by(survey_year) %>%
-            shapiro_test(percent_cover)
-        summary_acrossyears %>%
-            group_by(site) %>%
-            shapiro_test(percent_cover)
-        summary_acrossyears %>%
-            group_by(qualitative_transect_position) %>%
-            shapiro_test(percent_cover)
+    # overall difference
+    summary_acrossyears %>%
+        mutate(transformed_percent_cover = percent_cover^(1/3)) %>%  
+        anova_test(transformed_percent_cover ~ survey_year * site * qualitative_transect_position)
+    
+        # check assumptions
+            # homogeneity of variance --> p>0.05 is good
+            summary_acrossyears %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%  
+                levene_test(transformed_percent_cover ~ survey_year)
+            summary_acrossyears %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%  
+                levene_test(transformed_percent_cover ~ site)
+            summary_acrossyears %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%  
+                levene_test(transformed_percent_cover ~ qualitative_transect_position)
+            # normality --> p>0.05 is good
+            summary_acrossyears %>%
+                group_by(survey_year) %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%  
+                shapiro_test(transformed_percent_cover)
+            summary_acrossyears %>%
+                group_by(site) %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%  
+                shapiro_test(transformed_percent_cover)
+            summary_acrossyears %>%
+                group_by(qualitative_transect_position) %>%
+                mutate(transformed_percent_cover = percent_cover^(1/3)) %>%  
+                shapiro_test(transformed_percent_cover)
         
-    # perform anova with interaction effects
-    summary(aov(percent_cover ~ survey_year * site * qualitative_transect_position,
-                data = summary_acrossyears))
-    
-    TukeyHSD(aov(percent_cover ~ survey_year * site * qualitative_transect_position,
-                 data = summary_acrossyears), 
-             which = "site")
+        # post-hoc test
+        summary_acrossyears %>%
+            mutate(transformed_percent_cover = percent_cover^(1/3)) %>%  
+            tukey_hsd(transformed_percent_cover ~ survey_year * site * qualitative_transect_position)
         
 
 ## 4. Compare diversity across time periods ----
-    
-    # check assumptions
-        # homogeneity of variance --> p>0.05 is good
+        
+        # overall difference
         summary_acrossyears %>%
-            group_by(site, qualitative_transect_position) %>% 
-            levene_test(sp_richness ~ survey_year)
-        # normality --> p>0.05 is good
-        summary_acrossyears %>%
-            group_by(survey_year, site, qualitative_transect_position) %>%
-            shapiro_test(sp_richness)
-    
-    # perform anova with interaction effects
-    summary(aov(sp_richness ~ survey_year * site * qualitative_transect_position,
-                data = summary_acrossyears))  
-    
-    TukeyHSD(aov(sp_richness ~ survey_year * site * qualitative_transect_position,
-                 data = summary_acrossyears),
-             which = "qualitative_transect_position")
-    
-    TukeyHSD(aov(sp_richness ~ survey_year * site * qualitative_transect_position,
-                 data = summary_acrossyears),
-             which = "survey_year")
-   
-    # perform pairwise t-tests
-    summary_acrossyears %>%
-        group_by(site, survey_year) %>%
-        t_test(sp_richness ~ qualitative_transect_position) %>%
-        add_significance() 
-    # %>% mutate(y.position = c(3.8, 8, 6.5, 6.7))
-    
-    
-    richness_t_tests = 
+            anova_test(sp_richness ~ survey_year * site * qualitative_transect_position)
+        
         summary_acrossyears %>%
             group_by(site, qualitative_transect_position) %>%
-            t_test(sp_richness ~ survey_year) %>%
-            add_significance() %>%
-            mutate(y.position = c(3.8, 8, 6.5, 6.7))
+            anova_test(sp_richness ~ survey_year)
+        
+            # check assumptions
+                # homogeneity of variance --> p>0.05 is good
+                summary_acrossyears %>%
+                    levene_test(sp_richness ~ survey_year)
+                summary_acrossyears %>%
+                    levene_test(sp_richness ~ site)
+                summary_acrossyears %>%
+                    levene_test(sp_richness ~ qualitative_transect_position)
+                # normality --> p>0.05 is good
+                summary_acrossyears %>%
+                    group_by(survey_year) %>%
+                    shapiro_test(sp_richness)
+                summary_acrossyears %>%
+                    group_by(site) %>%
+                    shapiro_test(sp_richness)
+                summary_acrossyears %>%
+                    group_by(qualitative_transect_position) %>%
+                    shapiro_test(sp_richness)
+        
+        # post-hoc test
+        summary_acrossyears %>%
+            tukey_hsd(sp_richness ~ survey_year * site * qualitative_transect_position)
+    
     
 
 ## 5. Compare communities ----
