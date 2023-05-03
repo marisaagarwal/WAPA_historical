@@ -356,100 +356,222 @@
 
 ## 6. Species Accumulation ----
             
-    # specaccum across all transects
-    historic_specaccum_all = specaccum(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)])      
-    historic_specaccum_all = with(historic_specaccum_all, data.frame(sites, richness, sd)) 
-    historic_specaccum_all %<>%
-        rename(transect = "sites")
-
-    # specaccum by transect's position on reef & site
+    # # specaccum across all transects
+    # historic_specaccum_all = specaccum(amesbury_data_vegan_NMDS[,4:ncol(amesbury_data_vegan_NMDS)])      
+    # historic_specaccum_all = with(historic_specaccum_all, data.frame(sites, richness, sd)) 
+    # historic_specaccum_all %<>%
+    #     rename(transect = "sites")
+    # 
+    # # specaccum by transect's position on reef & site
+    #     
+    # amesbury_ASAN_inner = amesbury_data_vegan_NMDS %>% 
+    #     filter(Site == "Asan") %>%
+    #     filter(qualitative_transect_position == "inner_flat")
+    # historic_specaccum_ASAN_innerflat = specaccum(amesbury_ASAN_inner[,4:ncol(amesbury_ASAN_inner)])
+    # historic_specaccum_ASAN_innerflat = with(historic_specaccum_ASAN_innerflat, data.frame(sites, richness, sd)) 
+    # historic_specaccum_ASAN_innerflat %<>%
+    #     rename(transect = "sites") %>%
+    #     mutate(site = "Asan", 
+    #            position = "inner_flat")
+    # 
+    # amesbury_ASAN_outer = amesbury_data_vegan_NMDS %>% 
+    #     filter(Site == "Asan") %>%
+    #     filter(qualitative_transect_position == "outer_flat")
+    # historic_specaccum_ASAN_outerflat = specaccum(amesbury_ASAN_outer[,4:ncol(amesbury_ASAN_outer)])
+    # historic_specaccum_ASAN_outerflat = with(historic_specaccum_ASAN_outerflat, data.frame(sites, richness, sd)) 
+    # historic_specaccum_ASAN_outerflat %<>%
+    #     rename(transect = "sites") %>%
+    #     mutate(site = "Asan", 
+    #            position = "outer_flat")
+    # 
+    # amesbury_AGAT_inner = amesbury_data_vegan_NMDS %>% 
+    #     filter(Site == "Agat") %>%
+    #     filter(qualitative_transect_position == "inner_flat")
+    # historic_specaccum_AGAT_innerflat = specaccum(amesbury_AGAT_inner[,4:ncol(amesbury_AGAT_inner)])
+    # historic_specaccum_AGAT_innerflat = with(historic_specaccum_AGAT_innerflat, data.frame(sites, richness, sd)) 
+    # historic_specaccum_AGAT_innerflat %<>%
+    #     rename(transect = "sites") %>%
+    #     mutate(site = "Agat", 
+    #            position = "inner_flat")
+    # 
+    # amesbury_AGAT_outer = amesbury_data_vegan_NMDS %>% 
+    #     filter(Site == "Agat") %>%
+    #     filter(qualitative_transect_position == "outer_flat")
+    # historic_specaccum_AGAT_outerflat = specaccum(amesbury_AGAT_outer[,4:ncol(amesbury_AGAT_outer)])
+    # historic_specaccum_AGAT_outerflat = with(historic_specaccum_AGAT_outerflat, data.frame(sites, richness, sd)) 
+    # historic_specaccum_AGAT_outerflat %<>%
+    #     rename(transect = "sites") %>%
+    #     mutate(site = "Agat", 
+    #            position = "outer_flat")
+    # 
+    # combined_historic_specaccum_curves = 
+    #     rbind(historic_specaccum_ASAN_innerflat, historic_specaccum_ASAN_outerflat,
+    #           historic_specaccum_AGAT_innerflat, historic_specaccum_AGAT_outerflat) %>%
+    #     mutate(year = 1999)
+    
+    # sample-based rarefaction & extrapolation curves (hill number q = 0)
+            
+        # by individual
+        indv_iNEXT_1999_data = 
+            amesbury_data %>%
+                rename(site = "Site",
+                       transect = "Transect", 
+                       species = "Species Listed (2022 taxonomy)") %>%
+                mutate(species = recode(species,
+                                        `Leptastrea purpurea` = "LPUR",
+                       `Pocillopora damicornis` = "PDAM",
+                       `Porites lutea` = "PMAS", 
+                       `Heliopora coerulea` = "HCOE",
+                       `Porites rus` = "PRUS",
+                       `Goniastrea retiformis` = "GRET",
+                       `Porites cylindrica` = "PCYL",
+                       `Pavona divaricata` = "PDIV",
+                       `Pavona venosa` = "PVEN",
+                       `Pavona decussata` = "PDEC",
+                       `Porites lichen` = "PMAS",
+                       `Acropora aspera` = "AASP",
+                       `Porites lobata` = "PMAS")) %>%
+                group_by(site, transect, qualitative_transect_position, species) %>%
+                summarise(count = sum(Value)) %>%
+                mutate(survey_year = "1999")
+                       
+        indv_iNEXT_1999_data = 
+            as.data.frame(
+                indv_iNEXT_1999_data %>%
+                    mutate(site_zone_year = paste(site, sep = "_", qualitative_transect_position, survey_year), 
+                           site_zone_year = recode(site_zone_year, 
+                                                   Agat_inner_flat_1999 = "Agat Inner Reef Flat",
+                                                   Asan_inner_flat_1999 = "Asan Inner Reef Flat", 
+                                                   Agat_outer_flat_1999 = "Agat Outer Reef Flat", 
+                                                   Asan_outer_flat_1999 = "Asan Outer Reef Flat")) %>%
+                    group_by(site_zone_year, species) %>%
+                    summarise(count = sum(count)) %>%
+                    pivot_wider(names_from = site_zone_year, 
+                                values_from = count, 
+                                values_fill = 0))
         
-    amesbury_ASAN_inner = amesbury_data_vegan_NMDS %>% 
-        filter(Site == "Asan") %>%
-        filter(qualitative_transect_position == "inner_flat")
-    historic_specaccum_ASAN_innerflat = specaccum(amesbury_ASAN_inner[,4:ncol(amesbury_ASAN_inner)])
-    historic_specaccum_ASAN_innerflat = with(historic_specaccum_ASAN_innerflat, data.frame(sites, richness, sd)) 
-    historic_specaccum_ASAN_innerflat %<>%
-        rename(transect = "sites") %>%
-        mutate(site = "Asan", 
-               position = "inner_flat")
-    
-    amesbury_ASAN_outer = amesbury_data_vegan_NMDS %>% 
-        filter(Site == "Asan") %>%
-        filter(qualitative_transect_position == "outer_flat")
-    historic_specaccum_ASAN_outerflat = specaccum(amesbury_ASAN_outer[,4:ncol(amesbury_ASAN_outer)])
-    historic_specaccum_ASAN_outerflat = with(historic_specaccum_ASAN_outerflat, data.frame(sites, richness, sd)) 
-    historic_specaccum_ASAN_outerflat %<>%
-        rename(transect = "sites") %>%
-        mutate(site = "Asan", 
-               position = "outer_flat")
-    
-    amesbury_AGAT_inner = amesbury_data_vegan_NMDS %>% 
-        filter(Site == "Agat") %>%
-        filter(qualitative_transect_position == "inner_flat")
-    historic_specaccum_AGAT_innerflat = specaccum(amesbury_AGAT_inner[,4:ncol(amesbury_AGAT_inner)])
-    historic_specaccum_AGAT_innerflat = with(historic_specaccum_AGAT_innerflat, data.frame(sites, richness, sd)) 
-    historic_specaccum_AGAT_innerflat %<>%
-        rename(transect = "sites") %>%
-        mutate(site = "Agat", 
-               position = "inner_flat")
-    
-    amesbury_AGAT_outer = amesbury_data_vegan_NMDS %>% 
-        filter(Site == "Agat") %>%
-        filter(qualitative_transect_position == "outer_flat")
-    historic_specaccum_AGAT_outerflat = specaccum(amesbury_AGAT_outer[,4:ncol(amesbury_AGAT_outer)])
-    historic_specaccum_AGAT_outerflat = with(historic_specaccum_AGAT_outerflat, data.frame(sites, richness, sd)) 
-    historic_specaccum_AGAT_outerflat %<>%
-        rename(transect = "sites") %>%
-        mutate(site = "Agat", 
-               position = "outer_flat")
-    
-    combined_historic_specaccum_curves = 
-        rbind(historic_specaccum_ASAN_innerflat, historic_specaccum_ASAN_outerflat,
-              historic_specaccum_AGAT_innerflat, historic_specaccum_AGAT_outerflat) %>%
-        mutate(year = 1999)
-    
-# sample-based rarefaction & extrapolation curves (hill number = 0)
-    # by individual
-    indv_iNEXT_1999_data = 
-        amesbury_data %>%
+        rownames(indv_iNEXT_1999_data) = indv_iNEXT_1999_data %>% pull(species)
+        
+        indv_iNEXT_1999_data %<>%
+            dplyr::select(-c(species))
+        
+        indv_iNEXT_1999_models = iNEXT(x = indv_iNEXT_1999_data, q = 0, datatype = "abundance",  endpoint = 385, nboot = 100)
+
+        
+    # by transect
+        
+        # data formatting
+        transect_iNEXT_1999_data = 
+            amesbury_data %>%
             rename(site = "Site",
                    transect = "Transect", 
                    species = "Species Listed (2022 taxonomy)") %>%
             mutate(species = recode(species,
                                     `Leptastrea purpurea` = "LPUR",
-                   `Pocillopora damicornis` = "PDAM",
-                   `Porites lutea` = "PMAS", 
-                   `Heliopora coerulea` = "HCOE",
-                   `Porites rus` = "PRUS",
-                   `Goniastrea retiformis` = "GRET",
-                   `Porites cylindrica` = "PCYL",
-                   `Pavona divaricata` = "PDIV",
-                   `Pavona venosa` = "PVEN",
-                   `Pavona decussata` = "PDEC",
-                   `Porites lichen` = "PMAS",
-                   `Acropora aspera` = "AASP",
-                   `Porites lobata` = "PMAS")) %>%
+                                    `Pocillopora damicornis` = "PDAM",
+                                    `Porites lutea` = "PMAS", 
+                                    `Heliopora coerulea` = "HCOE",
+                                    `Porites rus` = "PRUS",
+                                    `Goniastrea retiformis` = "GRET",
+                                    `Porites cylindrica` = "PCYL",
+                                    `Pavona divaricata` = "PDIV",
+                                    `Pavona venosa` = "PVEN",
+                                    `Pavona decussata` = "PDEC",
+                                    `Porites lichen` = "PMAS",
+                                    `Acropora aspera` = "AASP",
+                                    `Porites lobata` = "PMAS")) %>%
             group_by(site, transect, qualitative_transect_position, species) %>%
             summarise(count = sum(Value)) %>%
-            mutate(survey_year = "1999")
-                   
-    indv_iNEXT_1999_data = 
-        as.data.frame(
-            indv_iNEXT_1999_data %>%
-                mutate(site_zone_year = paste(site, sep = "_", qualitative_transect_position, survey_year)) %>%
-                group_by(site_zone_year, species) %>%
-                summarise(count = sum(count)) %>%
-                pivot_wider(names_from = site_zone_year, 
-                            values_from = count, 
-                            values_fill = 0))
-    
-    rownames(indv_iNEXT_1999_data) = indv_iNEXT_1999_data %>% pull(species)
-    
-    indv_iNEXT_1999_data %<>%
-        dplyr::select(-c(species))
-    
-    indv_iNEXT_1999_models = iNEXT(x = indv_iNEXT_1999_data, q = 0, datatype = "abundance",  endpoint = 400, nboot = 100)
-    ggiNEXT(indv_iNEXT_1999_models, type = 1)
-
+            ungroup() %>%
+            mutate(survey_year = "1999") %>%
+            mutate(site_zone_year = paste(site, sep = "_", qualitative_transect_position, survey_year), 
+                   site_zone_year = recode(site_zone_year, 
+                                           Agat_inner_flat_1999 = "Agat Inner Reef Flat",
+                                           Asan_inner_flat_1999 = "Asan Inner Reef Flat", 
+                                           Agat_outer_flat_1999 = "Agat Outer Reef Flat", 
+                                           Asan_outer_flat_1999 = "Asan Outer Reef Flat"),
+                   transect = paste("transect", sep = "_", transect)) %>%
+            dplyr::select(-c(site, qualitative_transect_position, survey_year))
+        
+        # set up occurrence data
+        transect_iNEXT_1999_data %<>%
+            group_by(site_zone_year, transect) %>%
+            count(species) %>%
+            ungroup() %>%
+            group_by(site_zone_year) %>%
+            complete(transect, species) %>%
+            mutate(occurence = n/n) %>%
+            dplyr::select(-c(n)) %>%
+            mutate(occurence = replace_na(occurence, 0)) %>%
+            ungroup()
+        
+        # nest by site/zone
+        transect_iNEXT_1999_data %<>%
+            nest_by(site_zone_year)
+        
+        # create and format site-zone combos
+            # Agat Inner
+            occurence_Agat_inner_flat_1999 = as.data.frame(
+                transect_iNEXT_1999_data$data[[1]] %>%
+                    pivot_wider(values_from = occurence, 
+                                names_from = transect) %>%
+                    add_column(transect_19 = 0, 
+                               transect_24 = 0) )
+                # set rownames to be the species
+                rownames(occurence_Agat_inner_flat_1999) = 
+                    occurence_Agat_inner_flat_1999 %>% 
+                    pull(species)
+                # remove the species name column 
+                occurence_Agat_inner_flat_1999 %<>%
+                    dplyr::select(-c(species))
+            
+            # Agat Outer
+            occurence_Agat_outer_flat_1999 = as.data.frame(
+                transect_iNEXT_1999_data$data[[2]] %>%
+                    pivot_wider(values_from = occurence, 
+                                names_from = transect) )
+                # set rownames to be the species
+                rownames(occurence_Agat_outer_flat_1999) = 
+                    occurence_Agat_outer_flat_1999 %>% 
+                    pull(species)
+                # remove the species name column 
+                occurence_Agat_outer_flat_1999 %<>%
+                    dplyr::select(-c(species))
+            
+            # Asan Inner
+            occurence_Asan_inner_flat_1999 = as.data.frame(
+                transect_iNEXT_1999_data$data[[3]] %>%
+                    pivot_wider(values_from = occurence, 
+                                names_from = transect) )
+                # set rownames to be the species
+                rownames(occurence_Asan_inner_flat_1999) = 
+                    occurence_Asan_inner_flat_1999 %>% 
+                    pull(species)
+                # remove the species name column 
+                occurence_Asan_inner_flat_1999 %<>%
+                    dplyr::select(-c(species))
+            
+            # Asan Outer
+            occurence_Asan_outer_flat_1999 = as.data.frame(
+                transect_iNEXT_1999_data$data[[4]] %>%
+                    pivot_wider(values_from = occurence, 
+                                names_from = transect) )
+                # set rownames to be the species
+                rownames(occurence_Asan_outer_flat_1999) = 
+                    occurence_Asan_outer_flat_1999 %>% 
+                    pull(species)
+                # remove the species name column 
+                occurence_Asan_outer_flat_1999 %<>%
+                    dplyr::select(-c(species))
+       
+        # create the list
+        transect_iNEXT_1999_list = list(occurence_Agat_inner_flat_1999, occurence_Agat_outer_flat_1999, 
+                                        occurence_Asan_inner_flat_1999, occurence_Asan_outer_flat_1999)  
+                
+        names(transect_iNEXT_1999_list) = c("Agat Inner Reef Flat", "Agat Outer Reef Flat", 
+                                            "Asan Inner Reef Flat", "Asan Outer Reef Flat")         
+                
+        # create the model
+        transect_iNEXT_1999_models = iNEXT(transect_iNEXT_1999_list, datatype = "incidence_raw", q = 0, endpoint = 10, nboot = 100)       
+                
     

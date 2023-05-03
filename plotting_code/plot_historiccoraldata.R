@@ -188,14 +188,37 @@
 
 ## 4. Plot species accumulation curves ----
     
-    combined_historic_specaccum_curves %>%
-        ggplot(aes(x = transect, y = richness, color = position)) +
-            geom_point() +
-            geom_line() +
-            facet_wrap(~site) +
-            theme_light()
+    # combined_historic_specaccum_curves %>%
+    #     ggplot(aes(x = transect, y = richness, color = position)) +
+    #         geom_point() +
+    #         geom_line() +
+    #         facet_wrap(~site) +
+    #         theme_light()
     
+    # by individuals
+    ggiNEXT(indv_iNEXT_1999_models, type = 1) +
+        scale_color_viridis_d() +
+        scale_fill_viridis_d() +
+        scale_y_continuous(limits = c(0, 28), breaks = c(0, 5, 10, 15, 20, 25)) + 
+        labs(x = "Number of Corals Sampled", y = "Species Richness") +
+        theme_pubr(legend = "right") +
+        guides(linetype = "none", 
+               fill = guide_legend(title="WAPA Unit & Reef Flat Zone"),
+               color = guide_legend(title="WAPA Unit & Reef Flat Zone"),
+               shape = guide_legend(title="WAPA Unit & Reef Flat Zone"))
     
+    # by transects
+    ggiNEXT(transect_iNEXT_1999_models, type = 1) +
+        scale_color_viridis_d() +
+        scale_fill_viridis_d() +
+        scale_y_continuous(limits = c(0, 28), breaks = c(0, 5, 10, 15, 20, 25)) + 
+        scale_x_continuous(breaks = c(2, 4, 6, 8, 10)) + 
+        labs(x = "Number of Transects Sampled", y = "Species Richness") +
+        theme_pubr(legend = "right") +
+        guides(linetype = "none", 
+               fill = guide_legend(title="WAPA Unit & Reef Flat Zone"),
+               color = guide_legend(title="WAPA Unit & Reef Flat Zone"),
+               shape = guide_legend(title="WAPA Unit & Reef Flat Zone"))
     
     
     

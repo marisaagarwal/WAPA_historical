@@ -708,7 +708,6 @@
         names(transect_iNEXT_2022_list) = c("Agat Inner Reef Flat", "Agat Outer Reef Flat", 
                                             "Asan Inner Reef Flat", "Asan Outer Reef Flat")
         
-        
         # create the model
         transect_iNEXT_2022_models = iNEXT(transect_iNEXT_2022_list, datatype = "incidence_raw", q = 0, endpoint = 10, nboot = 100)
         
