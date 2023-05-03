@@ -37,6 +37,10 @@
     # species accumulation
     specaccum_acrossyears = rbind(combined_current_specaccum_curves, combined_historic_specaccum_curves)
     
+    iNEXT_2022_data
+    iNEXT_1999_data
+    
+    
     
 ## 3. Compare percent cover across time ----
     

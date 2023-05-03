@@ -154,41 +154,60 @@
 ## 5. Plot communities ----
 
     # * 5.1 Asan: Inner '99 vs Inner '22 ----
-    plotting_asan_inner_99_22_NMDS %>%
-        ggplot(aes(x = NMDS1, y = NMDS2, color = year)) +
-        geom_point(size = 3, alpha = 0.4) +
-        stat_ellipse(geom = "polygon", aes(color = year, 
-                                           fill = year),
-                     alpha = 0.2) +        
-        geom_point(size = 3, alpha = 0.6) +
+            plotting_asan_inner_99_22_NMDS %>%
+                ggplot(aes(x = NMDS1, y = NMDS2, color = year)) +
+                geom_point(size = 3, alpha = 0.4) +
+                stat_ellipse(geom = "polygon", aes(color = year, 
+                                                   fill = year),
+                             alpha = 0.2) +        
+                geom_point(size = 3, alpha = 0.6) +
+                scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
+                scale_color_manual(values = c("antiquewhite3", "cadetblue4")) +
+                labs(fill = "Survey Year", color = "Survey Year") +
+                theme_pubr(legend = "right")
+        
+            ggplot() +
+                geom_point(data = plotting_asan_inner_99_22_NMDS,
+                           aes(x = NMDS1, y = NMDS2, 
+                               color = year, 
+                               shape = year),
+                           size = 3, 
+                           alpha = 0.8) +
+                stat_ellipse(data = plotting_asan_inner_99_22_NMDS, 
+                             aes(x = NMDS1, y = NMDS2, 
+                                 color = year),
+                             linetype = 2, size = 1) +
+                geom_segment(data = significant_asan_inner_99_22_species_scores,
+                             aes(x = 0, xend=NMDS1, y=0, yend=NMDS2),
+                             arrow = arrow(length = unit(0.25, "cm")),
+                             colour = "grey10", 
+                             lwd = 0.3) +                                               # add vector arrows of significant env variables
+                ggrepel::geom_text_repel(data = significant_asan_inner_99_22_species_scores, 
+                                         aes(x=NMDS1, y=NMDS2, 
+                                             label = abrev),
+                                         cex = 3, 
+                                         direction = "both", 
+                                         segment.size = 0.25) +                          # add labels for species
+                theme_light()
+            
+    find_hull = function(plotting_asan_inner_99_22_NMDS) plotting_asan_inner_99_22_NMDS[chull(plotting_asan_inner_99_22_NMDS$NMDS1, plotting_asan_inner_99_22_NMDS$NMDS2), ]
+    hulls = ddply(plotting_asan_inner_99_22_NMDS, "year", find_hull)
+    
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = year, color = year),
+                     alpha = 0.2) +
+        geom_point(data = plotting_asan_inner_99_22_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = year)) +
         scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
         scale_color_manual(values = c("antiquewhite3", "cadetblue4")) +
-        labs(fill = "Survey Year", color = "Survey Year") +
-        theme_pubr(legend = "right")
-
-    ggplot() +
-        geom_point(data = plotting_asan_inner_99_22_NMDS,
-                   aes(x = NMDS1, y = NMDS2, 
-                       color = year, 
-                       shape = year),
-                   size = 3, 
-                   alpha = 0.8) +
-        stat_ellipse(data = plotting_asan_inner_99_22_NMDS, 
-                     aes(x = NMDS1, y = NMDS2, 
-                         color = year),
-                     linetype = 2, size = 1) +
-        geom_segment(data = significant_asan_inner_99_22_species_scores,
-                     aes(x = 0, xend=NMDS1, y=0, yend=NMDS2),
-                     arrow = arrow(length = unit(0.25, "cm")),
-                     colour = "grey10", 
-                     lwd = 0.3) +                                               # add vector arrows of significant env variables
-        ggrepel::geom_text_repel(data = significant_asan_inner_99_22_species_scores, 
-                                 aes(x=NMDS1, y=NMDS2, 
-                                     label = abrev),
-                                 cex = 3, 
-                                 direction = "both", 
-                                 segment.size = 0.25) +                          # add labels for species
-        theme_light()
+        # geom_label(aes(label = c("Agat", "Asan"), x = c(1.8, -0.5), y = c(0.85, 0.65)),
+        #            color = "black", fill = c("#440154", "#fde725"), size = 3, alpha = 0.3) +
+        geom_text(aes(label = "PERMANOVA; p = 0.0638", x = 0.7, y = -0.75), size = 3) +
+        theme_bw() +
+        labs_pubr() +
+        rremove("grid") +
+        rremove("legend")
     
     # * 5.2 Asan: Outer '99 vs Outer '22 ----
     plotting_asan_outer_99_22_NMDS %>%
@@ -227,6 +246,26 @@
                                  segment.size = 0.25) +                          # add labels for species
         theme_light()
     
+    
+    find_hull = function(plotting_asan_outer_99_22_NMDS) plotting_asan_outer_99_22_NMDS[chull(plotting_asan_outer_99_22_NMDS$NMDS1, plotting_asan_outer_99_22_NMDS$NMDS2), ]
+    hulls = ddply(plotting_asan_outer_99_22_NMDS, "year", find_hull)
+    
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = year, color = year),
+                     alpha = 0.2) +
+        geom_point(data = plotting_asan_outer_99_22_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = year)) +
+        scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
+        scale_color_manual(values = c("antiquewhite3", "cadetblue4")) +
+        # geom_label(aes(label = c("Agat", "Asan"), x = c(1.8, -0.5), y = c(0.85, 0.65)),
+        #            color = "black", fill = c("#440154", "#fde725"), size = 3, alpha = 0.3) +
+        geom_text(aes(label = "PERMANOVA; p = 0.342", x = 0.95, y = -0.95), size = 3) +
+        theme_bw() +
+        labs_pubr() +
+        rremove("grid") +
+        rremove("legend")
+    
     # * 5.3 Agat: Inner '99 vs Inner '22 ----
     plotting_agat_inner_99_22_NMDS %>%
         ggplot(aes(x = NMDS1, y = NMDS2, color = year)) +
@@ -264,6 +303,25 @@
                                  segment.size = 0.25) +                          # add labels for species
         theme_light()
     
+    find_hull = function(plotting_agat_inner_99_22_NMDS) plotting_agat_inner_99_22_NMDS[chull(plotting_agat_inner_99_22_NMDS$NMDS1, plotting_agat_inner_99_22_NMDS$NMDS2), ]
+    hulls = ddply(plotting_agat_inner_99_22_NMDS, "year", find_hull)
+    
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = year, color = year),
+                     alpha = 0.2) +
+        geom_point(data = plotting_agat_inner_99_22_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = year)) +
+        scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
+        scale_color_manual(values = c("antiquewhite3", "cadetblue4")) +
+        # geom_label(aes(label = c("Agat", "Asan"), x = c(1.8, -0.5), y = c(0.85, 0.65)),
+        #            color = "black", fill = c("#440154", "#fde725"), size = 3, alpha = 0.3) +
+        geom_text(aes(label = "PERMANOVA; p = 0.650", x = 0.3, y = 0.8), size = 3) +
+        theme_bw() +
+        labs_pubr() +
+        rremove("grid") +
+        rremove("legend")
+    
     # * 5.4 Agat: Outer '99 vs Outer '22 ----
     plotting_agat_outer_99_22_NMDS %>%
         ggplot(aes(x = NMDS1, y = NMDS2, color = year)) +
@@ -300,6 +358,26 @@
                                  direction = "both", 
                                  segment.size = 0.25) +                          # add labels for species
         theme_light()
+    
+    find_hull = function(plotting_agat_outer_99_22_NMDS) plotting_agat_outer_99_22_NMDS[chull(plotting_agat_outer_99_22_NMDS$NMDS1, plotting_agat_outer_99_22_NMDS$NMDS2), ]
+    hulls = ddply(plotting_agat_outer_99_22_NMDS, "year", find_hull)
+    
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = year, color = year),
+                     alpha = 0.2) +
+        geom_point(data = plotting_agat_outer_99_22_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = year)) +
+        scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
+        scale_color_manual(values = c("antiquewhite3", "cadetblue4")) +
+        # geom_label(aes(label = c("Agat", "Asan"), x = c(1.8, -0.5), y = c(0.85, 0.65)),
+        #            color = "black", fill = c("#440154", "#fde725"), size = 3, alpha = 0.3) +
+        geom_text(aes(label = "PERMANOVA; p = 0.103", x = 0.75, y = 0.85), size = 3) +
+        theme_bw() +
+        labs_pubr() +
+        rremove("grid") +
+        # labs(fill = "Survey Year", color = "Survey Year")
+        rremove("legend")
     
     
 # 6. Plot community composition by species ----

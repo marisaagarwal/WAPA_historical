@@ -55,6 +55,7 @@
     library(multcomp)
     library(vegan)
     library(EnvStats)
+    library(iNEXT)
     
     # call to visualisation & output generation
     library(ggplot2)

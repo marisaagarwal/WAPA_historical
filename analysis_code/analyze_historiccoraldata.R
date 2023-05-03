@@ -409,6 +409,47 @@
               historic_specaccum_AGAT_innerflat, historic_specaccum_AGAT_outerflat) %>%
         mutate(year = 1999)
     
+# sample-based rarefaction & extrapolation curves (hill number = 0)
+    # by individual
+    indv_iNEXT_1999_data = 
+        amesbury_data %>%
+            rename(site = "Site",
+                   transect = "Transect", 
+                   species = "Species Listed (2022 taxonomy)") %>%
+            mutate(species = recode(species,
+                                    `Leptastrea purpurea` = "LPUR",
+                   `Pocillopora damicornis` = "PDAM",
+                   `Porites lutea` = "PMAS", 
+                   `Heliopora coerulea` = "HCOE",
+                   `Porites rus` = "PRUS",
+                   `Goniastrea retiformis` = "GRET",
+                   `Porites cylindrica` = "PCYL",
+                   `Pavona divaricata` = "PDIV",
+                   `Pavona venosa` = "PVEN",
+                   `Pavona decussata` = "PDEC",
+                   `Porites lichen` = "PMAS",
+                   `Acropora aspera` = "AASP",
+                   `Porites lobata` = "PMAS")) %>%
+            group_by(site, transect, qualitative_transect_position, species) %>%
+            summarise(count = sum(Value)) %>%
+            mutate(survey_year = "1999")
+                   
+    indv_iNEXT_1999_data = 
+        as.data.frame(
+            indv_iNEXT_1999_data %>%
+                mutate(site_zone_year = paste(site, sep = "_", qualitative_transect_position, survey_year)) %>%
+                group_by(site_zone_year, species) %>%
+                summarise(count = sum(count)) %>%
+                pivot_wider(names_from = site_zone_year, 
+                            values_from = count, 
+                            values_fill = 0))
     
+    rownames(indv_iNEXT_1999_data) = indv_iNEXT_1999_data %>% pull(species)
+    
+    indv_iNEXT_1999_data %<>%
+        dplyr::select(-c(species))
+    
+    indv_iNEXT_1999_models = iNEXT(x = indv_iNEXT_1999_data, q = 0, datatype = "abundance",  endpoint = 400, nboot = 100)
+    ggiNEXT(indv_iNEXT_1999_models, type = 1)
 
     

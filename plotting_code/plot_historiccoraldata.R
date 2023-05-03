@@ -31,8 +31,28 @@
                                labels = c("Inner Flat", "Outer Flat")) +
             facet_wrap(~Site) +
             labs(fill = "Location", color = "Location") +
-            theme_pubr(legend = "right") 
+            theme_pubr(legend = "right")
     
+    
+    # by site
+    find_hull = function(plotting_historic_NMDS) plotting_historic_NMDS[chull(plotting_historic_NMDS$NMDS1, plotting_historic_NMDS$NMDS2), ]
+    hulls = ddply(plotting_historic_NMDS, "Site", find_hull)
+    
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = Site, color = Site),
+                     alpha = 0.2) +
+        geom_point(data = plotting_historic_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = Site)) +
+        scale_fill_manual(values = c("chocolate2", "darkblue")) +
+        scale_color_manual(values = c("chocolate2", "darkblue")) +
+        geom_label(aes(label = c("Agat", "Asan"), x = c(0.5, -1.5), y = c(0.8, -0.65)),
+                    color = "black", fill = c("chocolate2", "darkblue"), size = 3, alpha = 0.3) +
+        geom_text(aes(label = "PERMANOVA; p = 0.542", x = -1.8, y = 1), size = 3) +
+        theme_bw() +
+        labs_pubr() +
+        theme(legend.position = "none") +
+        rremove("grid") 
     
     plotting_historic_NMDS %>%
         ggplot(aes(x = NMDS1, y = NMDS2, color = Site, shape = Site)) +
@@ -41,6 +61,26 @@
             # ggrepel::geom_text_repel(label = plotting_historic_NMDS$Transect) +
             stat_ellipse(linetype = 2, size = 1) +
             theme_light()
+    
+    # by reef flat zone
+    find_hull = function(plotting_historic_NMDS) plotting_historic_NMDS[chull(plotting_historic_NMDS$NMDS1, plotting_historic_NMDS$NMDS2), ]
+    hulls = ddply(plotting_historic_NMDS, "qualitative_transect_position", find_hull)
+    
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = qualitative_transect_position, color = qualitative_transect_position),
+                     alpha = 0.2) +
+        geom_point(data = plotting_historic_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = qualitative_transect_position)) +
+        scale_fill_manual(values = c("magenta3", "lightgreen")) +
+        scale_color_manual(values = c("magenta3", "lightgreen")) +
+        geom_label(aes(label = c("Inner Reef Flat", "Outer Reef Flat"), x = c(-0.4, -1.5), y = c(0.45, -0.5)),
+                   color = "black", fill = c("magenta3", "lightgreen"), size = 3, alpha = 0.5) +
+        geom_text(aes(label = "PERMANOVA; p = 0.747", x = -1.8, y = 1), size = 3) +
+        theme_bw() +
+        labs_pubr() +
+        theme(legend.position = "none") +
+        rremove("grid") 
     
     plotting_historic_NMDS %>%
         ggplot(aes(x = NMDS1, y = NMDS2, color = qualitative_transect_position, shape = qualitative_transect_position)) +

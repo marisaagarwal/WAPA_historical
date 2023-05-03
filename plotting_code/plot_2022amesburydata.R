@@ -129,6 +129,25 @@
               plot.background = element_blank())
     
     
+    find_hull = function(plotting_current_NMDS) plotting_current_NMDS[chull(plotting_current_NMDS$NMDS1, plotting_current_NMDS$NMDS2), ]
+    hulls = ddply(plotting_current_NMDS, "site", find_hull)
+    
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = site, color = site),
+                     alpha = 0.2) +
+        geom_point(data = plotting_current_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = site)) +
+        scale_fill_manual(values = c("chocolate2", "darkblue")) +
+        scale_color_manual(values = c("chocolate2", "darkblue")) +
+        geom_label(aes(label = c("Agat", "Asan"), x = c(0.45, 0.9), y = c(-1, 0.3)),
+                   color = "black", fill = c("chocolate2", "darkblue"), size = 3, alpha = 0.3) +
+        geom_text(aes(label = "PERMANOVA; p = 0.0364", x = -0.7, y = -1.4), size = 3) +
+        theme_bw() +
+        labs_pubr() +
+        theme(legend.position = "none") +
+        rremove("grid")
+    
     
     
     # NMDS plot of coral communities at different locations
@@ -138,6 +157,26 @@
         geom_text(label = plotting_current_NMDS$transect) +
         stat_ellipse(linetype = 2, size = 1) +
         theme_light()
+    
+    find_hull = function(plotting_current_NMDS) plotting_current_NMDS[chull(plotting_current_NMDS$NMDS1, plotting_current_NMDS$NMDS2), ]
+    hulls = ddply(plotting_current_NMDS, "qualitative_transect_position", find_hull)
+    
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = qualitative_transect_position, color = qualitative_transect_position),
+                     alpha = 0.2) +
+        geom_point(data = plotting_current_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = qualitative_transect_position)) +
+        scale_fill_manual(values = c("magenta3", "lightgreen")) +
+        scale_color_manual(values = c("magenta3", "lightgreen")) +
+        geom_label(aes(label = c("Inner Reef Flat", "Outer Reef Flat"), x = c(-0.11, 1.1), y = c(0.9, -0.3)),
+                   color = "black", fill = c("magenta3", "lightgreen"), size = 3, alpha = 0.5) +
+        geom_text(aes(label = "PERMANOVA; p = 0.0228", x = -0.7, y = -1.4), size = 3) +
+        theme_bw() +
+        labs_pubr() +
+        theme(legend.position = "none") +
+        rremove("grid")
+    
     
     # NMDS plot of coral communities at different sites & locations on reef flat
     plotting_current_NMDS %>%
@@ -308,32 +347,61 @@
   
 ## 8. Plot coral sizes ----
     
-  full_join(x = all_data %>%
-                mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
-            y = surveysummary_2022) %>%
-      dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
-    ggplot(aes(x = species, y = area_cm2, fill = qualitative_transect_position)) +
-        geom_boxplot() +
-        facet_wrap(~site)
-  
-  summary_species_sizes %>%
-      filter(site == "Agat") %>%
-      ggplot(aes(x = species, y = mean_coral_area, fill = qualitative_transect_position)) +
-        geom_col(position = "dodge") +
-        geom_errorbar(aes(ymin = mean_coral_area - std_error_coral_area,
-                          ymax = mean_coral_area + std_error_coral_area),
-                      position = position_dodge(0.9), width = 0.2) 
-        # facet_wrap(~site, ncol = 1)
+  # full_join(x = all_data %>%
+  #               mutate(area_cm2 = (pi*((colony_diameter1_cm/2)*(colony_diameter2_cm/2)))/4),
+  #           y = surveysummary_2022) %>%
+  #     dplyr::select(c("site", "transect", "species", "qualitative_transect_position", "area_cm2")) %>%
+  #   ggplot(aes(x = species, y = area_cm2, fill = qualitative_transect_position)) +
+  #       geom_boxplot() +
+  #       facet_wrap(~site)
+  # 
+  # summary_species_sizes %>%
+  #     filter(site == "Agat") %>%
+  #     ggplot(aes(x = species, y = mean_coral_area, fill = qualitative_transect_position)) +
+  #       geom_col(position = "dodge") +
+  #       geom_errorbar(aes(ymin = mean_coral_area - std_error_coral_area,
+  #                         ymax = mean_coral_area + std_error_coral_area),
+  #                     position = position_dodge(0.9), width = 0.2) 
+  #       # facet_wrap(~site, ncol = 1)
       
 
 ## 9. Plot species accumulation curves ----
   
-  combined_current_specaccum_curves %>%
-      ggplot(aes(x = transect, y = richness, color = position)) +
-          geom_point() +
-          geom_line() +
-          facet_wrap(~site) +
-          theme_light()
+  # combined_current_specaccum_curves %>%
+  #     ggplot(aes(x = transect, y = richness, color = position)) +
+  #         geom_point() +
+  #         geom_line() +
+  #         facet_wrap(~site) +
+  #         theme_light()
+  
+  # by individuals
+  ggiNEXT(indv_iNEXT_2022_models, type = 1) +
+    scale_color_viridis_d() +
+    scale_fill_viridis_d() +
+    scale_y_continuous(limits = c(0, 28), breaks = c(0, 5, 10, 15, 20, 25)) + 
+    labs(x = "Number of Corals Sampled", y = "Species Richness") +
+    theme_pubr(legend = "right") +
+    guides(linetype = "none", 
+           fill = guide_legend(title="WAPA Unit & Reef Flat Zone"),
+           color = guide_legend(title="WAPA Unit & Reef Flat Zone"),
+           shape = guide_legend(title="WAPA Unit & Reef Flat Zone"))
+  
+  
+  # by transects
+  ggiNEXT(transect_iNEXT_2022_models, type = 1) +
+      scale_color_viridis_d() +
+      scale_fill_viridis_d() +
+      scale_y_continuous(limits = c(0, 28), breaks = c(0, 5, 10, 15, 20, 25)) + 
+      scale_x_continuous(breaks = c(2, 4, 6, 8, 10)) + 
+      labs(x = "Number of Transects Sampled", y = "Species Richness") +
+      theme_pubr(legend = "right") +
+      guides(linetype = "none", 
+             fill = guide_legend(title="WAPA Unit & Reef Flat Zone"),
+             color = guide_legend(title="WAPA Unit & Reef Flat Zone"),
+             shape = guide_legend(title="WAPA Unit & Reef Flat Zone"))
+  
+  
+  
   
             
             
