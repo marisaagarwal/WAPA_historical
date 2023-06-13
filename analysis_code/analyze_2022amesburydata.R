@@ -337,48 +337,96 @@
     
     
     # difference in community based on transect's position on reef within each site?
-    # Asan
-    asan_current_data_vegan = 
-        current_data_vegan %>%
-        filter(site == "Asan")
-    
-    asan_reference_current = 
-        reference_current %>%
-        filter(site == "Asan")
-    
-            # assumption: do groups have homogeneous variances? 
-            dis = vegdist(asan_current_data_vegan[,5:ncol(asan_current_data_vegan)],
-                          method="bray")
-            mod = betadisper(dis, asan_reference_current$qualitative_transect_position)
-            anova(mod)      # p>0.05, proceed
-                # plot(mod)
-    
-    adonis2(asan_current_data_vegan[,5:ncol(asan_current_data_vegan)] ~ qualitative_transect_position, 
-            data = asan_reference_current, 
-            permutations = 9999,
-            method = "bray")                    # no difference in community, p>0.05
-    
-    # Agat
-    agat_current_data_vegan = 
-        current_data_vegan %>%
-        filter(site == "Agat")
-    
-    agat_reference_current = 
-        reference_current %>%
-        filter(site == "Agat")
-    
-            # assumption: do groups have homogeneous variances? 
-            dis = vegdist(agat_current_data_vegan[,5:ncol(agat_current_data_vegan)],
-                          method="bray")
-            mod = betadisper(dis, agat_reference_current$qualitative_transect_position)
-            anova(mod)      # p>0.05, proceed
-                # plot(mod)
-    
-    adonis2(agat_current_data_vegan[,5:ncol(agat_current_data_vegan)] ~ qualitative_transect_position, 
-            data = agat_reference_current, 
-            permutations = 9999,
-            method = "bray")                    # yes, p<0.05    
-    
+        # Asan
+        asan_current_data_vegan = 
+            current_data_vegan %>%
+            filter(site == "Asan")
+        
+        asan_reference_current = 
+            reference_current %>%
+            filter(site == "Asan")
+        
+                # assumption: do groups have homogeneous variances? 
+                dis = vegdist(asan_current_data_vegan[,5:ncol(asan_current_data_vegan)],
+                              method="bray")
+                mod = betadisper(dis, asan_reference_current$qualitative_transect_position)
+                anova(mod)      # p>0.05, proceed
+                    # plot(mod)
+        
+        adonis2(asan_current_data_vegan[,5:ncol(asan_current_data_vegan)] ~ qualitative_transect_position, 
+                data = asan_reference_current, 
+                permutations = 9999,
+                method = "bray")                    # no difference in community, p>0.05
+        
+        # Agat
+        agat_current_data_vegan = 
+            current_data_vegan %>%
+            filter(site == "Agat")
+        
+        agat_reference_current = 
+            reference_current %>%
+            filter(site == "Agat")
+        
+                # assumption: do groups have homogeneous variances? 
+                dis = vegdist(agat_current_data_vegan[,5:ncol(agat_current_data_vegan)],
+                              method="bray")
+                mod = betadisper(dis, agat_reference_current$qualitative_transect_position)
+                anova(mod)      # p>0.05, proceed
+                    # plot(mod)
+        
+        adonis2(agat_current_data_vegan[,5:ncol(agat_current_data_vegan)] ~ qualitative_transect_position, 
+                data = agat_reference_current, 
+                permutations = 9999,
+                method = "bray")                    # yes, p<0.05  
+        
+            # which species are driving that?
+            agat_currentcoral_NMDS = metaMDS(agat_current_data_vegan[,5:ncol(agat_current_data_vegan)], 
+                                        k = 2,
+                                        distance = "bray", 
+                                        trymax = 100)
+
+            stressplot(agat_currentcoral_NMDS)
+            plot(agat_currentcoral_NMDS)
+            
+            reference_current_agat = 
+                agat_current_data_vegan %>%
+                dplyr::select(c(site, transect, qualitative_transect_position, substrate_type)) %>%
+                ungroup() %>%
+                mutate(row_ID = row_number())
+            
+            agat_plotting_current_NMDS = 
+                scores(agat_currentcoral_NMDS, display = "sites") %>% 
+                as.data.frame() %>% 
+                rownames_to_column("row_ID")
+            
+            agat_plotting_current_NMDS = merge(reference_current_agat, agat_plotting_current_NMDS)
+            
+            agat_currentcoral_speciesfit =
+                envfit(agat_currentcoral_NMDS, 
+                       agat_current_data_vegan[,5:ncol(agat_current_data_vegan)], 
+                       permutations = 999,
+                       na.rm = T) # this fits species vectors      
+            
+            agat_current_species_scores =
+                as.data.frame(scores(agat_currentcoral_speciesfit,
+                                     display = "vectors"))                                      #save species intrinsic values into dataframe
+            
+            agat_current_species_scores = cbind(agat_current_species_scores, 
+                                           Species = rownames(agat_current_species_scores))        #add species names to dataframe
+            
+            agat_current_species_scores = cbind(agat_current_species_scores,
+                                           pval = agat_currentcoral_speciesfit$vectors$pvals)      #add pvalues to dataframe so you can select species which are significant
+            
+            
+            agat_current_species_scores = cbind(agat_current_species_scores,
+                                           abrev = abbreviate(agat_current_species_scores$Species,
+                                                              minlength = 4, 
+                                                              method = "both"))                #abbreviate species names
+            
+            agat_significant_current_species_scores = subset(agat_current_species_scores,
+                                                        pval <= 0.05)                          #subset data to show species significant at 0.05
+        
+        
     
 ## 7.5 NMDS (genus level) ----
     
@@ -710,4 +758,109 @@
         
         # create the model
         transect_iNEXT_2022_models = iNEXT(transect_iNEXT_2022_list, datatype = "incidence_raw", q = 0, endpoint = 10, nboot = 100)
+ 
         
+## 11. Updated Diversity Analysis ----
+        
+    # richness / alpha
+        
+        # shannon diversity 
+        shannon_current_data = 
+            current_data_vegan %>%
+            mutate(site_transect_position = paste(site, transect, qualitative_transect_position, sep = "_")) %>%
+            group_by(site_transect_position) %>%
+            dplyr::select(-c("site", "transect", "qualitative_transect_position", "substrate_type"))
+        
+        row.names(shannon_current_data) = shannon_current_data$site_transect_position
+        shannon_current_matrix =  as.matrix(shannon_current_data,
+                                         rownames.force = T)
+        shannon_current_matrix =  shannon_current_matrix[,colnames(shannon_current_matrix) != "site_transect_position"]
+        class(shannon_current_matrix) = "numeric"
+        
+        shannon_current = as.data.frame(diversity(shannon_current_matrix, index = "shannon"))
+        shannon_current %<>%
+            transmute(shannon_diversity = diversity(shannon_current_matrix, index = "shannon"),
+                      site_transect_position = rownames(shannon_current)) %>%
+            mutate(year = 2022) %>%
+            separate(site_transect_position, c("site", "transect", "position"))
+        
+        # perform test (2-way ANOVA)
+        shannon_current %>%
+            anova_test(shannon_diversity ~ site * position)
+        
+            # check assumptions
+                # homogeneity of variance --> p>0.05 is good
+                shannon_current %>%
+                    levene_test(shannon_diversity ~ site)
+                shannon_current %>%
+                    levene_test(shannon_diversity ~ position)
+                # normality --> p>0.05 is good
+                shannon_current %>%
+                    group_by(site) %>%
+                    shapiro_test(shannon_diversity)
+                shannon_current %>%
+                    group_by(position) %>%
+                    shapiro_test(shannon_diversity)
+        
+        # post-hoc testing
+        shannon_current %>%
+            tukey_hsd(shannon_diversity ~ site * position)
+        
+        # summary stats
+        shannon_current %>%
+            group_by(site, position) %>%
+            summarise(mean_shannon = mean(shannon_diversity),
+                      std_error_shannon = std.error(shannon_diversity))
+        
+        # testing within each unit
+        shannon_current %>%
+            filter(site == "Asan") %>%
+            t_test(shannon_diversity ~ position)
+        shannon_current %>%
+            filter(site == "Agat") %>%
+            t_test(shannon_diversity ~ position)
+        
+
+    # species turnover 
+    # beta diversity (beta Chao-Jaccard)
+        
+        # between sites
+        beta_current_sites = 
+            current_data_vegan %>%
+            pivot_longer(cols = c(5:33), names_to = "species") %>%
+            group_by(site, species) %>%
+            summarise(value = sum(value)) %>%
+            pivot_wider(names_from = species, values_from = value)
+        
+        row.names(beta_current_sites) = beta_current_sites$site
+        beta_current_sites_matrix =  as.matrix(beta_current_sites,rownames.force = T)
+        beta_current_sites_matrix =  beta_current_sites_matrix[,colnames(beta_current_sites_matrix) != "site"]
+        class(beta_current_sites_matrix) = "numeric"
+        
+            # perform test
+            dis.chao(beta_current_sites_matrix, index="jaccard", version="prob")
+        
+        #between inner and outer reef flat
+        beta_current_position = 
+            current_data_vegan %>%
+            pivot_longer(cols = c(5:33), names_to = "species") %>%
+            group_by(qualitative_transect_position, species) %>%
+            summarise(value = sum(value)) %>%
+            pivot_wider(names_from = species, values_from = value)
+        
+        row.names(beta_current_position) = beta_current_position$qualitative_transect_position
+        beta_current_position_matrix =  as.matrix(beta_current_position,rownames.force = T)
+        beta_current_position_matrix =  beta_current_position_matrix[,colnames(beta_current_position_matrix) != "qualitative_transect_position"]
+        class(beta_current_position_matrix) = "numeric"
+        
+        # perform test
+        dis.chao(beta_current_position_matrix, index="jaccard", version="prob")
+        
+        
+        
+        
+        
+        
+        
+
+

@@ -239,67 +239,153 @@
     
 ## 4. Diversity ----
     
+    # species number summary 
     amesbury_summary %>%
         filter(`Position on Reef` == "reef flat") %>%
         group_by(Site, reefflat_transect_position) %>%
-        summarise(mean_sp_richness = mean(Diversity), 
-                  std_error_sp_richness = std.error(Diversity))
+        summarise(mean_sp_number = mean(Diversity), 
+                  std_error_sp_number = std.error(Diversity))
     
-    # overall difference between sites
-    amesbury_summary %>%
-        filter(`Position on Reef` == "reef flat") %>%
-        anova_test(Diversity ~ Site * reefflat_transect_position)
+    # richness / alpha
     
-        # check assumptions
-            # homogeneity of variance --> p>0.05 is good
-            amesbury_summary %>%
-                filter(`Position on Reef` == "reef flat") %>%
-                levene_test(Diversity ~ Site)
-            amesbury_summary %>%
-                filter(`Position on Reef` == "reef flat") %>%
-                levene_test(Diversity ~ reefflat_transect_position)
-            # normality --> p>0.05 is good
-            amesbury_summary %>%
-                filter(`Position on Reef` == "reef flat") %>%
-                group_by(Site) %>%
-                shapiro_test(Diversity)
-            amesbury_summary %>%
-                filter(`Position on Reef` == "reef flat") %>%
-                group_by(Site) %>%
-                shapiro_test(Diversity)
+        # shannon diversity 
+        shannon_ames_data = 
+            amesbury_data %>%
+                mutate(species = recode(`Species Listed (2022 taxonomy)`,
+                                        `Leptastrea purpurea` = "LPUR",
+                                        `Pocillopora damicornis` = "PDAM",
+                                        `Porites lutea` = "PLUT", 
+                                        `Heliopora coerulea` = "HCOE",
+                                        `Porites rus` = "PRUS",
+                                        `Goniastrea retiformis` = "GRET",
+                                        `Porites cylindrica` = "PCYL",
+                                        `Pavona divaricata` = "PDIV",
+                                        `Pavona venosa` = "PVEN",
+                                        `Pavona decussata` = "PDEC",
+                                        `Porites lichen` = "PLIC",
+                                        `Acropora aspera` = "AASP",
+                                        `Porites lobata` = "PLOB"),
+                       site = Site,
+                       transect = Transect) %>%
+                mutate(site_transect_position = paste(site, transect, qualitative_transect_position, sep = "_")) %>%
+                group_by(site_transect_position, species) %>%
+                summarise(Value = sum(Value)) %>%
+                pivot_wider(names_from = species,
+                            values_from = Value,
+                            values_fill = 0) %>%
+                ungroup() 
+        
+        row.names(shannon_ames_data) = shannon_ames_data$site_transect_position
+        shannon_ames_matrix =  as.matrix(shannon_ames_data,
+                                          rownames.force = T)
+        shannon_ames_matrix =  shannon_ames_matrix[,colnames(shannon_ames_matrix) != "site_transect_position"]
+        class(shannon_ames_matrix) = "numeric"
+        
+        shannon_ames = as.data.frame(diversity(shannon_ames_matrix, index = "shannon"))
+        shannon_ames %<>%
+            transmute(shannon_diversity = diversity(shannon_ames_matrix, index = "shannon"),
+                      site_transect_position = rownames(shannon_ames)) %>%
+            mutate(year = 1999) %>%
+            separate(site_transect_position, c("site", "transect", "position"))
             
-        # post-hoc testing
-        amesbury_summary %>%
-            filter(`Position on Reef` == "reef flat") %>%
-            tukey_hsd(Diversity ~ Site * reefflat_transect_position)
+        # perform test (2-way ANOVA)
+        shannon_ames %>%
+            anova_test(shannon_diversity ~ site * position)
+
+            # check assumptions
+                # homogeneity of variance --> p>0.05 is good
+                shannon_ames %>%
+                    levene_test(shannon_diversity ~ site)
+                shannon_ames %>%
+                    levene_test(shannon_diversity ~ position)
+                # normality --> p>0.05 is good
+                shannon_ames %>%
+                    group_by(site) %>%
+                    shapiro_test(shannon_diversity)
+                shannon_ames %>%
+                        group_by(position) %>%
+                        shapiro_test(shannon_diversity)
+
+            # post-hoc testing
+            shannon_ames %>%
+                tukey_hsd(shannon_diversity ~ site * position)
             
-    # # difference between inner and outer flat within each site
-    # amesbury_summary %>%
-    #     filter(`Position on Reef` == "reef flat") %>%
-    #     group_by(Site) %>%
-    #         anova_test(Diversity ~ reefflat_transect_position)
-    # 
-    #     # check assumptions
-    #         # homogeneity of variance --> p>0.05 is good
-    #         amesbury_summary %>%
-    #             filter(`Position on Reef` == "reef flat") %>%
-    #             group_by(Site) %>%
-    #             levene_test(Diversity ~ reefflat_transect_position)
-    #         # normality --> p>0.05 is good
-    #         amesbury_summary %>%
-    #             filter(`Position on Reef` == "reef flat") %>%
-    #             group_by(Site, reefflat_transect_position) %>%
-    #             shapiro_test(Diversity)
-    # 
-    #    # pairsise t-tests
-    #         amesbury_summary %>%
-    #             filter(`Position on Reef` == "reef flat") %>%
-    #             filter(Site == "Agat") %>%
-    #             t_test(Diversity ~ reefflat_transect_position)
-    #         amesbury_summary %>%
-    #             filter(`Position on Reef` == "reef flat") %>%
-    #             filter(Site == "Asan") %>%
-    #             t_test(Diversity ~ reefflat_transect_position)
+        # summary stats
+        shannon_ames %>%
+            group_by(site, position) %>%
+            summarise(mean_shannon = mean(shannon_diversity),
+                      std_error_shannon = std.error(shannon_diversity))
+
+            
+    # species turnover 
+            
+        # beta diversity (beta Chao-Jaccard)
+            
+            # between sites
+            beta_ames_sites = 
+                amesbury_data %>%
+                mutate(species = recode(`Species Listed (2022 taxonomy)`,
+                                        `Leptastrea purpurea` = "LPUR",
+                                        `Pocillopora damicornis` = "PDAM",
+                                        `Porites lutea` = "PLUT", 
+                                        `Heliopora coerulea` = "HCOE",
+                                        `Porites rus` = "PRUS",
+                                        `Goniastrea retiformis` = "GRET",
+                                        `Porites cylindrica` = "PCYL",
+                                        `Pavona divaricata` = "PDIV",
+                                        `Pavona venosa` = "PVEN",
+                                        `Pavona decussata` = "PDEC",
+                                        `Porites lichen` = "PLIC",
+                                        `Acropora aspera` = "AASP",
+                                        `Porites lobata` = "PLOB"),
+                       site = Site,
+                       transect = Transect) %>%
+                group_by(site, species) %>%
+                summarise(Value = sum(Value)) %>%
+                pivot_wider(names_from = species,
+                            values_from = Value,
+                            values_fill = 0)
+            
+                row.names(beta_ames_sites) = beta_ames_sites$site
+                beta_ames_sites_matrix =  as.matrix(beta_ames_sites,rownames.force = T)
+                beta_ames_sites_matrix =  beta_ames_sites_matrix[,colnames(beta_ames_sites_matrix) != "site"]
+                class(beta_ames_sites_matrix) = "numeric"
+                
+                # perform test
+                dis.chao(beta_ames_sites_matrix, index="jaccard", version="prob")
+
+            #between inner and outer reef flat
+            beta_ames_position = 
+                amesbury_data %>%
+                mutate(species = recode(`Species Listed (2022 taxonomy)`,
+                                        `Leptastrea purpurea` = "LPUR",
+                                        `Pocillopora damicornis` = "PDAM",
+                                        `Porites lutea` = "PLUT", 
+                                        `Heliopora coerulea` = "HCOE",
+                                        `Porites rus` = "PRUS",
+                                        `Goniastrea retiformis` = "GRET",
+                                        `Porites cylindrica` = "PCYL",
+                                        `Pavona divaricata` = "PDIV",
+                                        `Pavona venosa` = "PVEN",
+                                        `Pavona decussata` = "PDEC",
+                                        `Porites lichen` = "PLIC",
+                                        `Acropora aspera` = "AASP",
+                                        `Porites lobata` = "PLOB"),
+                       site = Site,
+                       transect = Transect) %>%
+                group_by(qualitative_transect_position, species) %>%
+                summarise(Value = sum(Value)) %>%
+                pivot_wider(names_from = species,
+                            values_from = Value,
+                            values_fill = 0)  
+            
+            row.names(beta_ames_position) = beta_ames_position$qualitative_transect_position
+            beta_ames_position_matrix =  as.matrix(beta_ames_position,rownames.force = T)
+            beta_ames_position_matrix =  beta_ames_position_matrix[,colnames(beta_ames_position_matrix) != "qualitative_transect_position"]
+            class(beta_ames_position_matrix) = "numeric"
+            
+            # perform test
+            dis.chao(beta_ames_position_matrix, index="jaccard", version="prob")
             
 
 ## 5. Percent Cover ----

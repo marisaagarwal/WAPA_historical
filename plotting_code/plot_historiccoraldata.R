@@ -205,7 +205,8 @@
         guides(linetype = "none", 
                fill = guide_legend(title="WAPA Unit & Reef Flat Zone"),
                color = guide_legend(title="WAPA Unit & Reef Flat Zone"),
-               shape = guide_legend(title="WAPA Unit & Reef Flat Zone"))
+               shape = guide_legend(title="WAPA Unit & Reef Flat Zone")) +
+        labs_pubr()
     
     # by transects
     ggiNEXT(transect_iNEXT_1999_models, type = 1) +
@@ -218,7 +219,8 @@
         guides(linetype = "none", 
                fill = guide_legend(title="WAPA Unit & Reef Flat Zone"),
                color = guide_legend(title="WAPA Unit & Reef Flat Zone"),
-               shape = guide_legend(title="WAPA Unit & Reef Flat Zone"))
+               shape = guide_legend(title="WAPA Unit & Reef Flat Zone")) +
+        labs_pubr()
     
     
     

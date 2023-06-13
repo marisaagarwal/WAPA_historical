@@ -62,17 +62,12 @@
                          limits = c("inner_flat", "outer_flat")) +
         scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
         stat_pvalue_manual(stat.test_cover, label = "p.adj.signif", tip.length = 0.01, hide.ns = T) +
-        # geom_text(aes(x = qualitative_transect_position,
-        #               y = 0,
-        #               label = paste("n =",percent_cover,"\n"),
-        #               group = survey_year),
-        #           aggregate(. ~ qualitative_transect_position + survey_year, summary_acrossyears, length),
-        #           position = position_dodge(.8))
-        # stat_n_text(y.pos = -2, size = 3,inherit.aes = T) +
+
         labs(fill = "Survey Year",
              x = "Reef Flat Zone",
-             y = "Mean Percent Cover") +
-        theme_pubr(legend = "right") 
+             y = "Mean Percent Cover (%)") +
+        theme_pubr(legend = "right") +
+        labs_pubr()
         
     
     
@@ -132,23 +127,24 @@
         labs(fill = "Survey Year",
              x = "Reef Flat Zone",
              y = "Mean Species Richness") +
-        theme_pubr(legend = "right") 
+        theme_pubr(legend = "right") +
+        labs_pubr()
     
     
 ## 4. Plot species accumulation curves ----
     
-    specaccum_acrossyears %>%
-        ggplot(aes(x = transect, y = richness,
-                   color = as.character(year), shape = position)) +
-            geom_point() +
-            geom_line() +
-            scale_color_manual(values = c("antiquewhite3", "cadetblue4")) +
-            scale_shape_discrete(labels = c("Inner Reef Flat", "Outer Reef Flat")) +
-            facet_wrap(~site) +
-            scale_x_continuous(breaks = seq(0,10,2)) +
-            labs(x = "Transect Number", y = "Species Richness", color = "Survey Year",
-                 shape = "Location") +
-            theme_pubr(legend = "right")
+    # specaccum_acrossyears %>%
+    #     ggplot(aes(x = transect, y = richness,
+    #                color = as.character(year), shape = position)) +
+    #         geom_point() +
+    #         geom_line() +
+    #         scale_color_manual(values = c("antiquewhite3", "cadetblue4")) +
+    #         scale_shape_discrete(labels = c("Inner Reef Flat", "Outer Reef Flat")) +
+    #         facet_wrap(~site) +
+    #         scale_x_continuous(breaks = seq(0,10,2)) +
+    #         labs(x = "Transect Number", y = "Species Richness", color = "Survey Year",
+    #              shape = "Location") +
+    #         theme_pubr(legend = "right")
     
     
 ## 5. Plot communities ----
@@ -380,7 +376,7 @@
         rremove("legend")
     
     
-# 6. Plot community composition by species ----
+## 6. Plot community composition by species ----
     
     comm_for_plotting %>%
         ggplot(aes(x = qualitative_transect_position, y = Value, fill = Species)) +
@@ -392,5 +388,39 @@
              fill = "Species Code") +
         theme_pubr(legend = "right")
         
-        
+
+## 7. Plot diversity ----
+    
+    
+    combined_diversity = rbind(shannon_ames, shannon_current)
+    
+    combined_diversity %<>%
+        mutate(year = as.character(year))
+    
+    stat.test_diversity = combined_diversity %>%
+        group_by(site, position) %>%
+        t_test(shannon_diversity ~ year) %>% 
+        add_significance(p.col = "p", 
+                         output.col = "p.adj.signif", 
+                         cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+                         symbols = c("***", "**", "*", "ns")) %>%
+        add_xy_position(x = "position", dodge = 0.9) %>%
+        mutate(y.position = c(1, 1.55, 1, 1.3))
+    
+    ggbarplot(combined_diversity, 
+              x = "position", y = "shannon_diversity", 
+              fill = "year",
+              add = "mean_se",
+              position = position_dodge(0.8),
+              facet.by = "site") +
+        scale_x_discrete(labels=c("inner" = "Inner", 
+                                  "outer" = "Outer"), 
+                         limits = c("inner", "outer")) +
+        scale_fill_manual(values = c("antiquewhite3", "cadetblue4")) +
+        stat_pvalue_manual(stat.test_diversity, label = "p.adj.signif", tip.length = 0.01, hide.ns = T) +
+        labs(fill = "Survey Year",
+             x = "Reef Flat Zone",
+             y = "Mean Diversity (H)") +
+        theme_pubr(legend = "right") +
+        labs_pubr()
     

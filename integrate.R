@@ -56,6 +56,7 @@
     library(vegan)
     library(EnvStats)
     library(iNEXT)
+    library(CommEcol)
     
     # call to visualisation & output generation
     library(ggplot2)

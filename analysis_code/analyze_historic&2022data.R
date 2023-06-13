@@ -35,10 +35,7 @@
                                                       inner = "inner_flat", outer = "outer_flat"))
     
     # species accumulation
-    specaccum_acrossyears = rbind(combined_current_specaccum_curves, combined_historic_specaccum_curves)
-    
-    iNEXT_2022_data
-    iNEXT_1999_data
+    # specaccum_acrossyears = rbind(combined_current_specaccum_curves, combined_historic_specaccum_curves)
     
     
     
@@ -80,7 +77,7 @@
             tukey_hsd(transformed_percent_cover ~ survey_year * site * qualitative_transect_position)
         
 
-## 4. Compare diversity across time periods ----
+## 4. Compare richness across time ----
         
         # overall difference
         summary_acrossyears %>%
@@ -88,7 +85,7 @@
         
         summary_acrossyears %>%
             group_by(site, qualitative_transect_position) %>%
-            anova_test(sp_richness ~ survey_year)
+            t_test(sp_richness ~ survey_year)
         
             # check assumptions
                 # homogeneity of variance --> p>0.05 is good
@@ -112,7 +109,6 @@
         # post-hoc test
         summary_acrossyears %>%
             tukey_hsd(sp_richness ~ survey_year * site * qualitative_transect_position)
-    
     
 
 ## 5. Compare communities ----
@@ -476,7 +472,7 @@
         
 
         
-# 6. Plot community composition by species ----
+# 6. For plotting community composition by species ----
         
         historic_comm_formatted = 
             amesbury_data %>%
@@ -506,5 +502,312 @@
         
         comm_for_plotting = 
             rbind(current_comm_formatted, historic_comm_formatted) 
-    
+
+        
+## 7. Compare diversity across time ----
+        
+    # * 7.1 Shannon's diversity index ----
+        
+        # overall difference
+        combined_diversity %>%
+            anova_test(shannon_diversity ~ year * site * position)
+        
+        combined_diversity %>%
+            group_by(site, position) %>%
+            t_test(shannon_diversity ~ year)
+        
+            # check assumptions
+                # homogeneity of variance --> p>0.05 is good
+                combined_diversity %>%
+                    levene_test(shannon_diversity ~ year)
+                combined_diversity %>%
+                    levene_test(shannon_diversity ~ site)
+                combined_diversity %>%
+                    levene_test(shannon_diversity ~ position)
+                # normality --> p>0.05 is good
+                combined_diversity %>%
+                    group_by(year) %>%
+                    shapiro_test(shannon_diversity)
+                combined_diversity %>%
+                    group_by(site) %>%
+                    shapiro_test(shannon_diversity)
+                combined_diversity %>%
+                    group_by(position) %>%
+                    shapiro_test(shannon_diversity)
+        
+        # post-hoc test
+        combined_diversity %>%
+            tukey_hsd(shannon_diversity ~ year * site * position)
+        
+   # * 7.2 beta diversity / species turnover  ----
+        
+        # overall
+        overall_beta = 
+            bind_rows(beta_ames_sites %>%
+                            pivot_longer(cols = c(2:14), names_to = "species", values_to = "count") %>%
+                            mutate(year = 1999) %>%
+                            group_by(species) %>%
+                            summarise(count = sum(count)) %>%
+                            pivot_wider(names_from = species, values_from = count) %>%
+                            ungroup() %>%
+                            rowwise() %>%
+                            mutate(PMAS = sum(c_across(c(PLUT,PLIC,PLOB)))) %>%
+                            ungroup() %>%                      
+                            dplyr::select(-c(PLUT, PLIC, PLOB)),
+                      beta_current_sites %>%
+                          pivot_longer(cols = c(2:30), names_to = "species", values_to = "count") %>%
+                          mutate(year = 2022) %>%
+                          group_by(species) %>%
+                          summarise(count = sum(count)) %>%
+                          pivot_wider(names_from = species, values_from = count)) %>%
+                replace(is.na(.), 0)
+        
+        row.names(overall_beta) = c("1999", "2022")
+        overall_beta_matrix =  as.matrix(overall_beta,rownames.force = T)
+        class(overall_beta_matrix) = "numeric"
+        
+            # perform test
+            dis.chao(overall_beta_matrix, index="jaccard", version="prob")
+
+        # by unit
+        
+            # Asan 
+            Asan_beta = bind_rows(beta_ames_sites %>%
+                                    rowwise() %>%
+                                    mutate(PMAS = sum(c_across(c(PLUT,PLIC,PLOB)))) %>%
+                                    ungroup() %>%                      
+                                    dplyr::select(-c(PLUT, PLIC, PLOB)) %>%
+                                    filter(site == "Asan"),
+                                  beta_current_sites %>%
+                                      filter(site == "Asan")) %>%
+                            replace(is.na(.), 0)
+            
+            row.names(Asan_beta) = c("1999", "2022")
+            Asan_beta_matrix =  as.matrix(Asan_beta,rownames.force = T)
+            Asan_beta_matrix =  Asan_beta_matrix[,colnames(Asan_beta_matrix) != "site"]
+            class(Asan_beta_matrix) = "numeric"
+            
+                # perform test
+                dis.chao(Asan_beta_matrix, index="jaccard", version="prob")
+            
+            # by reef flat position within Asan
+                
+                # inner reef flat
+                Asan_inner_beta = bind_rows(
+                    amesbury_data %>%
+                        mutate(species = recode(`Species Listed (2022 taxonomy)`,
+                                                `Leptastrea purpurea` = "LPUR",
+                                                `Pocillopora damicornis` = "PDAM",
+                                                `Porites lutea` = "PLUT", 
+                                                `Heliopora coerulea` = "HCOE",
+                                                `Porites rus` = "PRUS",
+                                                `Goniastrea retiformis` = "GRET",
+                                                `Porites cylindrica` = "PCYL",
+                                                `Pavona divaricata` = "PDIV",
+                                                `Pavona venosa` = "PVEN",
+                                                `Pavona decussata` = "PDEC",
+                                                `Porites lichen` = "PLIC",
+                                                `Acropora aspera` = "AASP",
+                                                `Porites lobata` = "PLOB"),
+                               site = Site,
+                               transect = Transect) %>%
+                        filter(site == "Asan") %>%
+                        group_by(qualitative_transect_position, species) %>%
+                        summarise(Value = sum(Value)) %>%
+                        pivot_wider(names_from = species,
+                                    values_from = Value,
+                                    values_fill = 0) %>%
+                        rowwise() %>%
+                        mutate(PMAS = sum(c_across(c(PLUT)))) %>%
+                        ungroup() %>%                      
+                        dplyr::select(-c(PLUT)) %>%
+                        mutate(year = 1999),
+                    current_data_vegan %>%
+                        pivot_longer(cols = c(5:33), names_to = "species") %>%
+                        filter(site == "Asan") %>%
+                        group_by(qualitative_transect_position, species) %>%
+                        summarise(value = sum(value)) %>%
+                        pivot_wider(names_from = species, values_from = value) %>%
+                        mutate(year = 2022)) %>%
+                    replace(is.na(.), 0) %>%
+                    filter(qualitative_transect_position == "inner_flat")
+                
+                row.names(Asan_inner_beta) = c("1999", "2022")
+                Asan_inner_beta_matrix =  as.matrix(Asan_inner_beta,rownames.force = T)
+                Asan_inner_beta_matrix =  Asan_inner_beta_matrix[,colnames(Asan_inner_beta_matrix) != "qualitative_transect_position"]
+                Asan_inner_beta_matrix =  Asan_inner_beta_matrix[,colnames(Asan_inner_beta_matrix) != "year"]
+                class(Asan_inner_beta_matrix) = "numeric"
+                
+                    # perform test
+                    dis.chao(Asan_inner_beta_matrix, index="jaccard", version="prob")
+                
+                # outer reef flat
+                Asan_outer_beta = bind_rows(
+                    amesbury_data %>%
+                        mutate(species = recode(`Species Listed (2022 taxonomy)`,
+                                                `Leptastrea purpurea` = "LPUR",
+                                                `Pocillopora damicornis` = "PDAM",
+                                                `Porites lutea` = "PLUT", 
+                                                `Heliopora coerulea` = "HCOE",
+                                                `Porites rus` = "PRUS",
+                                                `Goniastrea retiformis` = "GRET",
+                                                `Porites cylindrica` = "PCYL",
+                                                `Pavona divaricata` = "PDIV",
+                                                `Pavona venosa` = "PVEN",
+                                                `Pavona decussata` = "PDEC",
+                                                `Porites lichen` = "PLIC",
+                                                `Acropora aspera` = "AASP",
+                                                `Porites lobata` = "PLOB"),
+                               site = Site,
+                               transect = Transect) %>%
+                        filter(site == "Asan") %>%
+                        group_by(qualitative_transect_position, species) %>%
+                        summarise(Value = sum(Value)) %>%
+                        pivot_wider(names_from = species,
+                                    values_from = Value,
+                                    values_fill = 0) %>%
+                        rowwise() %>%
+                        mutate(PMAS = sum(c_across(c(PLUT)))) %>%
+                        ungroup() %>%                      
+                        dplyr::select(-c(PLUT)) %>%
+                        mutate(year = 1999),
+                    current_data_vegan %>%
+                        pivot_longer(cols = c(5:33), names_to = "species") %>%
+                        filter(site == "Asan") %>%
+                        group_by(qualitative_transect_position, species) %>%
+                        summarise(value = sum(value)) %>%
+                        pivot_wider(names_from = species, values_from = value) %>%
+                        mutate(year = 2022)) %>%
+                    replace(is.na(.), 0) %>%
+                    filter(qualitative_transect_position == "outer_flat")
+                    
+                row.names(Asan_outer_beta) = c("1999", "2022")
+                Asan_outer_beta_matrix =  as.matrix(Asan_outer_beta,rownames.force = T)
+                Asan_outer_beta_matrix =  Asan_outer_beta_matrix[,colnames(Asan_outer_beta_matrix) != "qualitative_transect_position"]
+                Asan_outer_beta_matrix =  Asan_outer_beta_matrix[,colnames(Asan_outer_beta_matrix) != "year"]
+                class(Asan_outer_beta_matrix) = "numeric"
+                    
+                    # perform test
+                    dis.chao(Asan_outer_beta_matrix, index="jaccard", version="prob")
+                    
+            # Agat 
+            Agat_beta = bind_rows(beta_ames_sites %>%
+                                      rowwise() %>%
+                                      mutate(PMAS = sum(c_across(c(PLUT,PLIC,PLOB)))) %>%
+                                      ungroup() %>%                      
+                                      dplyr::select(-c(PLUT, PLIC, PLOB)) %>%
+                                      filter(site == "Agat"),
+                                  beta_current_sites %>%
+                                      filter(site == "Agat")) %>%
+                replace(is.na(.), 0)
+            
+            row.names(Agat_beta) = c("1999", "2022")
+            Agat_beta_matrix =  as.matrix(Agat_beta,rownames.force = T)
+            Agat_beta_matrix =  Agat_beta_matrix[,colnames(Agat_beta_matrix) != "site"]
+            class(Agat_beta_matrix) = "numeric"
+            
+                # perform test
+                dis.chao(Agat_beta_matrix, index="jaccard", version="prob")
+            
+            # by reef flat position within Agat
+                
+                # inner reef flat
+                Agat_inner_beta = bind_rows(
+                    amesbury_data %>%
+                        mutate(species = recode(`Species Listed (2022 taxonomy)`,
+                                                `Leptastrea purpurea` = "LPUR",
+                                                `Pocillopora damicornis` = "PDAM",
+                                                `Porites lutea` = "PLUT", 
+                                                `Heliopora coerulea` = "HCOE",
+                                                `Porites rus` = "PRUS",
+                                                `Goniastrea retiformis` = "GRET",
+                                                `Porites cylindrica` = "PCYL",
+                                                `Pavona divaricata` = "PDIV",
+                                                `Pavona venosa` = "PVEN",
+                                                `Pavona decussata` = "PDEC",
+                                                `Porites lichen` = "PLIC",
+                                                `Acropora aspera` = "AASP",
+                                                `Porites lobata` = "PLOB"),
+                               site = Site,
+                               transect = Transect) %>%
+                        filter(site == "Agat") %>%
+                        group_by(qualitative_transect_position, species) %>%
+                        summarise(Value = sum(Value)) %>%
+                        pivot_wider(names_from = species,
+                                    values_from = Value,
+                                    values_fill = 0) %>%
+                        rowwise() %>%
+                        mutate(PMAS = sum(c_across(c(PLUT, PLIC, PLOB)))) %>%
+                        ungroup() %>%                      
+                        dplyr::select(-c(PLUT, PLIC, PLOB)) %>%
+                        mutate(year = 1999),
+                    current_data_vegan %>%
+                        pivot_longer(cols = c(5:33), names_to = "species") %>%
+                        filter(site == "Agat") %>%
+                        group_by(qualitative_transect_position, species) %>%
+                        summarise(value = sum(value)) %>%
+                        pivot_wider(names_from = species, values_from = value) %>%
+                        mutate(year = 2022)) %>%
+                    replace(is.na(.), 0) %>%
+                    filter(qualitative_transect_position == "inner_flat")
+                
+                row.names(Agat_inner_beta) = c("1999", "2022")
+                Agat_inner_beta_matrix =  as.matrix(Agat_inner_beta,rownames.force = T)
+                Agat_inner_beta_matrix =  Agat_inner_beta_matrix[,colnames(Agat_inner_beta_matrix) != "qualitative_transect_position"]
+                Agat_inner_beta_matrix =  Agat_inner_beta_matrix[,colnames(Agat_inner_beta_matrix) != "year"]
+                class(Agat_inner_beta_matrix) = "numeric"
+                
+                    # perform test
+                    dis.chao(Agat_inner_beta_matrix, index="jaccard", version="prob")
+                
+                # outer reef flat
+                Agat_outer_beta = bind_rows(
+                    amesbury_data %>%
+                        mutate(species = recode(`Species Listed (2022 taxonomy)`,
+                                                `Leptastrea purpurea` = "LPUR",
+                                                `Pocillopora damicornis` = "PDAM",
+                                                `Porites lutea` = "PLUT", 
+                                                `Heliopora coerulea` = "HCOE",
+                                                `Porites rus` = "PRUS",
+                                                `Goniastrea retiformis` = "GRET",
+                                                `Porites cylindrica` = "PCYL",
+                                                `Pavona divaricata` = "PDIV",
+                                                `Pavona venosa` = "PVEN",
+                                                `Pavona decussata` = "PDEC",
+                                                `Porites lichen` = "PLIC",
+                                                `Acropora aspera` = "AASP",
+                                                `Porites lobata` = "PLOB"),
+                               site = Site,
+                               transect = Transect) %>%
+                        filter(site == "Agat") %>%
+                        group_by(qualitative_transect_position, species) %>%
+                        summarise(Value = sum(Value)) %>%
+                        pivot_wider(names_from = species,
+                                    values_from = Value,
+                                    values_fill = 0) %>%
+                        rowwise() %>%
+                        mutate(PMAS = sum(c_across(c(PLUT, PLIC, PLOB)))) %>%
+                        ungroup() %>%                      
+                        dplyr::select(-c(PLUT, PLIC, PLOB)) %>%
+                        mutate(year = 1999),
+                    current_data_vegan %>%
+                        pivot_longer(cols = c(5:33), names_to = "species") %>%
+                        filter(site == "Agat") %>%
+                        group_by(qualitative_transect_position, species) %>%
+                        summarise(value = sum(value)) %>%
+                        pivot_wider(names_from = species, values_from = value) %>%
+                        mutate(year = 2022)) %>%
+                    replace(is.na(.), 0) %>%
+                    filter(qualitative_transect_position == "outer_flat")
+                
+                row.names(Agat_outer_beta) = c("1999", "2022")
+                Agat_outer_beta_matrix =  as.matrix(Agat_outer_beta,rownames.force = T)
+                Agat_outer_beta_matrix =  Agat_outer_beta_matrix[,colnames(Agat_outer_beta_matrix) != "qualitative_transect_position"]
+                Agat_outer_beta_matrix =  Agat_outer_beta_matrix[,colnames(Agat_outer_beta_matrix) != "year"]
+                class(Agat_outer_beta_matrix) = "numeric"
+                
+                    # perform test
+                    dis.chao(Agat_outer_beta_matrix, index="jaccard", version="prob")
+                
+            
     

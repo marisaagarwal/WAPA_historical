@@ -221,8 +221,44 @@
                                  segment.size = 0.25) +                          # add labels for species
         theme_light()
     
-
+    # Agat only: species contribution to NMDS separation?
+    find_hull = function(agat_plotting_current_NMDS) agat_plotting_current_NMDS[chull(agat_plotting_current_NMDS$NMDS1, agat_plotting_current_NMDS$NMDS2), ]
+    hulls = ddply(agat_plotting_current_NMDS, "qualitative_transect_position", find_hull)
     
+    ggplot() +
+        geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, 
+                                       fill = qualitative_transect_position, color = qualitative_transect_position),
+                     alpha = 0.2) +
+        geom_point(data = agat_plotting_current_NMDS, 
+                   aes(x = NMDS1, y = NMDS2, color = qualitative_transect_position)) +
+        scale_fill_manual(values = c("magenta3", "lightgreen")) +
+        scale_color_manual(values = c("magenta3", "lightgreen")) +
+        geom_label(aes(label = c("Inner Reef Flat", "Outer Reef Flat"), x = c(-0.8, 1.5), y = c(-0.17, 0)),
+                   color = "black", fill = c("magenta3", "lightgreen"), size = 3, alpha = 0.5) +
+        geom_text(aes(label = "PERMANOVA; p = 0.0015", x = -0.8, y = -1.4), size = 3) +
+        geom_segment(data = agat_significant_current_species_scores,
+                     aes(x = 0, xend=NMDS1, y=0, yend=NMDS2),
+                     arrow = arrow(length = unit(0.1, "cm")),
+                     colour = "grey10", 
+                     lwd = 0.5) + 
+        ggrepel::geom_text_repel(data = agat_significant_current_species_scores,
+                                 aes(x=NMDS1, y=NMDS2,
+                                     label = abrev, 
+                                     segment.color = "gray40"),
+                                 color = "grey40",
+                                 cex = 4,
+                                 direction = "both",
+                                 max.overlaps = 10,
+                                 min.segment.length = 0,
+                                 force_pull = 3, 
+                                 force = 3, 
+                                 seed = 100) +
+        theme_bw() +
+        labs_pubr() +
+        theme(legend.position = "none") +
+        rremove("grid")
+    
+
 ## 5.5. Plot NMDS (genus level) ----
     
     # NMDS plot of coral communities at each site
@@ -266,7 +302,7 @@
                      aes(x = 0, xend=NMDS1, y=0, yend=NMDS2),
                      arrow = arrow(length = unit(0.25, "cm")),
                      colour = "grey10", 
-                     lwd = 0.3) +                                               # add vector arrows of significant env variables
+                     lwd = 0.4) +                                               # add vector arrows of significant env variables
         ggrepel::geom_text_repel(data = significant_current_species_scores_genus, 
                                  aes(x=NMDS1, y=NMDS2, 
                                      label = abrev),
@@ -384,7 +420,8 @@
     guides(linetype = "none", 
            fill = guide_legend(title="WAPA Unit & Reef Flat Zone"),
            color = guide_legend(title="WAPA Unit & Reef Flat Zone"),
-           shape = guide_legend(title="WAPA Unit & Reef Flat Zone"))
+           shape = guide_legend(title="WAPA Unit & Reef Flat Zone")) +
+    labs_pubr()
   
   
   # by transects
@@ -398,7 +435,8 @@
       guides(linetype = "none", 
              fill = guide_legend(title="WAPA Unit & Reef Flat Zone"),
              color = guide_legend(title="WAPA Unit & Reef Flat Zone"),
-             shape = guide_legend(title="WAPA Unit & Reef Flat Zone"))
+             shape = guide_legend(title="WAPA Unit & Reef Flat Zone")) +
+      labs_pubr()
   
   
   
